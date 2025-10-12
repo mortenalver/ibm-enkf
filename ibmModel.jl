@@ -27,7 +27,8 @@ function getFeedConcentration(ind)
     end
 end
 
-function step(t, dt, ind, perturb, indsInteraction, idx, xall, yall)
+function step(t, dt, ind, perturb, idx, xall, yall, ms)
+    
     # Update position by speed with perturbations added:
     pertX = 0.0
     pertY = 0.0
@@ -81,8 +82,7 @@ function step(t, dt, ind, perturb, indsInteraction, idx, xall, yall)
     ind.v_y += dt*(v_y_new - ind.v_y)
 
     # If individual interaction is activated, orient away from close individuals:
-    if indsInteraction
-        distThresh = 0.2
+    if ms.indsInteraction
         dxInt = 0.0
         dyInt = 0.0
         xdist = abs.(xall .- ind.x)
@@ -92,15 +92,15 @@ function step(t, dt, ind, perturb, indsInteraction, idx, xall, yall)
                 continue # Individuals do not interact with themselves
             end
             # Check if x+y distance is less than a threshold: 
-            if (xdist[i]+ydist[i]) < (1.5*distThresh)
+            if (xdist[i]+ydist[i]) < (1.5*ms.indsInteractionThresh)
                 dist = sqrt(xdist[i]*xdist[i] + ydist[i]*ydist[i])
-                if dist < distThresh
+                if dist < ms.indsInteractionThresh
                     # Add a little to x and y speeds to move away from the close individual:
-                    abxfac = abs((0.5*distThresh)/xdist[i])
-                    abyfac = abs((0.5*distThresh)/ydist[i])
+                    abxfac = abs((0.5*ms.indsInteractionThresh)/xdist[i])
+                    abyfac = abs((0.5*ms.indsInteractionThresh)/ydist[i])
                     
-                    dxInt = dxInt + 0.1*sign(ind.x - xall[i])*min(1.0, abxfac)
-                    dyInt = dyInt + 0.1*sign(ind.y - yall[i])*min(1.0, abyfac)
+                    dxInt = dxInt + ms.indsInteractionStrength*sign(ind.x - xall[i])*min(1.0, abxfac)
+                    dyInt = dyInt + ms.indsInteractionStrength*sign(ind.y - yall[i])*min(1.0, abyfac)
                 end
             end
         end
@@ -140,7 +140,7 @@ function stepAll(t, dt, indsArray, perturb, ms)
         #if i==1
         #    println(ufield[xind, yind])
         #end
-        step(t, dt, ind, perturb, ms.indsInteraction, i, xall, yall)
+        step(t, dt, ind, perturb, i, xall, yall, ms)
         
     end
     

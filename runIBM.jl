@@ -33,6 +33,7 @@ mutable struct ModelSettings
     nPerInd::Float64
     indsInteraction::Bool
     indsInteractionThresh::Float64
+    indsInteractionStrength::Float64
     minNormSpeed::Float64
     scopeNormSpeed::Float64
 
@@ -59,6 +60,8 @@ function main()
     # Simulation parameters:
     ms = ModelSettings()
     ms.indsInteraction = true
+    ms.indsInteractionThresh = 0.55
+    ms.indsInteractionStrength = 0.1
     ms.nInd = 2000 #6000 # Number of individuals
     ms.nPerInd = 1.0 # individuals per super individual
     ms.minNormSpeed = 0.5
