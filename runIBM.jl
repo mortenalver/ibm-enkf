@@ -143,7 +143,7 @@ function main()
             doPlot = tstep==60
             updatedEnsemble = ibmAssimilation(as, deepcopy(ensemble), xlim, ylim, dxy, doPlot)
             
-            if !dryRun
+            if !as.dryRun
                 ensemble = updatedEnsemble
             end
         end

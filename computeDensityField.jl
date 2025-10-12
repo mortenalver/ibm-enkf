@@ -33,7 +33,7 @@ function computeDensityField(indsArray, xlim, ylim, dxy)
     return field, xrng, yrng
 end
 
-function computeAverageEnergyField(indsArray, xlim, ylim, dxy)
+function computeAverageEnergyField(indsArray, xlim, ylim, dxy, eFillVal)
     # Compute a field as given by xlim, ylim and dxy with average E values 
     # of individuals per cell, weighted by the individuals' N values:
     # weighted by their N value per grid cell:
@@ -58,7 +58,7 @@ function computeAverageEnergyField(indsArray, xlim, ylim, dxy)
     fieldE = fieldE ./ fieldN
     for i=1:length(fieldE)
         if isnan(fieldE[i])
-            fieldE[i] = 0.0
+            fieldE[i] = eFillVal
         end
     end
     return fieldE, xrng, yrng
