@@ -8,6 +8,7 @@ using NCDatasets
 using Statistics
 using LinearAlgebra
 using DelimitedFiles
+using OptimalTransport
 
 include("ibmModel.jl")
 #include("ibmModel2.jl")
@@ -16,6 +17,7 @@ include("enKF.jl")
 include("util.jl")
 include("measurementModel.jl")
 include("applyCorrectionsIBM.jl")
+include("applyCorrectionsResample.jl")
 include("ibmAssimilation.jl")
 
 function readCurrentField(filename)
@@ -32,12 +34,13 @@ mutable struct ModelSettings
     nInd::Int
     nPerInd::Float64
     indsInteraction::Bool
+    migration::Bool
     indsInteractionThresh::Float64
     indsInteractionStrength::Float64
     minNormSpeed::Float64
     scopeNormSpeed::Float64
 
-    ModelSettings() = new(2000,1,false,1.0,2,3)
+    ModelSettings() = new(2000,1,true,false,1.0,2,3)
 end
 
 # Struct holding assimilation settings:
@@ -45,22 +48,25 @@ mutable struct AssimSettings
     dryRun::Bool
     N::Int
     assimInterval::Int
+    resampleAll::Bool
 
-    AssimSettings() = new(false,2,10)
+    AssimSettings() = new(false,2,10,false)
 end
 
-function main()
+function main(setDryrun, setResample)
 
     # Basic settings:
-    simname = "r1_"
+    simnamePrefix = "r3"
     dt = 0.1 # Time step
-    t_end = 20 # Simulation end time
+    t_end = 100 # Simulation end time
     storageInterval = 2
-
+    initFoodLevel = 1.0
+    
     # Simulation parameters:
     ms = ModelSettings()
-    ms.indsInteraction = true
-    ms.indsInteractionThresh = 0.55
+    ms.migration = true
+    ms.indsInteraction = false
+    ms.indsInteractionThresh = 0.22
     ms.indsInteractionStrength = 0.1
     ms.nInd = 2000 #6000 # Number of individuals
     ms.nPerInd = 1.0 # individuals per super individual
@@ -69,9 +75,19 @@ function main()
 
     # Assimilation settings:
     as = AssimSettings()
-    as.dryRun = true
-    as.N = 20# 100
+    as.dryRun = setDryrun
+    as.N = 100# 100
+    as.resampleAll = setResample # True to use resampling strategy
     as.assimInterval = 15
+
+    # Modify sim name according to run mode:
+    simname = simnamePrefix*"_"
+    if as.dryRun
+        simname = "d_"*simname
+    end
+    if as.resampleAll
+        simname = simname*"resample_"
+    end
 
     # Define area for density fields:
     xlim = [0, 20]
@@ -107,8 +123,9 @@ function main()
                 normspeed = 1.25*normspeed # Non-twin is 25% faster
             end
 
-            ensemble[ensI][i] = createIndividual(.5 + 5*(rand(Float64)-0.5), 
-                7.5 + 15*(rand(Float64)-0.5), normspeed, ms.nPerInd)
+            indX = 3.5 + 1.5*randn(Float64)
+            indY = 9.5 + 1.5*randn(Float64)
+            ensemble[ensI][i] = createIndividual(indX, indY, normspeed, ms.nPerInd)
         end
     end
 
@@ -116,8 +133,13 @@ function main()
     densityField, xrng, yrng = computeDensityField(ensemble[Ndim], xlim, ylim, dxy)
     storeDens_twin = fill(0.0, length(densityField), nstoretimes)
     storeEnergy_twin = fill(0.0, length(densityField), nstoretimes)
+    storeX_twin = fill(0.0, length(densityField), nstoretimes)
     storeDens_e = fill(0.0, length(densityField), nstoretimes)
     storeEnergy_e = fill(0.0, length(densityField), nstoretimes)
+
+    # Initialize food field on same dimensions as the density field:
+    X_fld = fill(initFoodLevel, size(densityField,1), size(densityField,2),Ndim)
+
 
     for tstep = 1:ntimes
 
@@ -130,20 +152,21 @@ function main()
             perturb = zeros(Float64, 20, 4)
             #if ensI < Ndim
             for ptI = 1:size(perturb,1)
-                perturb[ptI,:] = [2.5*(rand(Float64)-0.5), 2.5*(rand(Float64)-0.5),
+                perturb[ptI,:] = [1.0*randn(Float64), 1.0*randn(Float64),
                     xlim[1]+rand(Float64)*(xlim[2]-xlim[1]), ylim[1]+rand(Float64)*(ylim[2]-ylim[1])]
             end
             #end
 
             indsArray = ensemble[ensI]
-            stepAll(t, dt, indsArray, perturb, ms)
-
+            X_fld_upd = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
+            X_fld[:,:,ensI] = X_fld_upd
         end
 
+        #println(X_fld[10,10,1])
         if mod(tstep, as.assimInterval) == 0
             println("Assim at tstep=", tstep)
             
-            doPlot = tstep==60
+            doPlot = tstep==50
             updatedEnsemble = ibmAssimilation(as, deepcopy(ensemble), xlim, ylim, dxy, doPlot)
             
             if !as.dryRun
@@ -178,6 +201,10 @@ function main()
             energyField, xrng, yrng = computeAverageEnergyField(ensemble[Ndim], xlim, ylim, dxy, eFillval)
             storeEnergy_twin[:,storeCount] = reshape(energyField, length(densityField), 1)
 
+            # Store X field for twin:
+            storeX_twin[:,storeCount] = reshape(X_fld[:,:,Ndim], length(densityField), 1)
+
+
             # Store mean ensemble density field:
             densEnsemble = zeros(Float64,length(xrng)*length(yrng), as.N)
             energyEnsemble = zeros(Float64,length(xrng)*length(yrng), as.N)
@@ -188,11 +215,14 @@ function main()
                 
                 energyField, xrng, yrng = computeAverageEnergyField(indsArray, xlim, ylim, dxy, eFillval)
                 energyEnsemble[:,ensI] = reshape(energyField, length(densityField), 1)
-                
-
             end    
             storeDens_e[:,storeCount] = mean(densEnsemble, dims=2)
             storeEnergy_e[:,storeCount] = mean(energyEnsemble, dims=2)
+
+            #densityField, xrng, yrng = computeDensityField(ensemble[1], xlim, ylim, dxy)
+            #energyField, xrng, yrng = computeAverageEnergyField(ensemble[1], xlim, ylim, dxy, eFillval)
+            #storeDens_e[:,storeCount] = reshape(densityField, length(densityField), 1)
+            #storeEnergy_e[:,storeCount] = reshape(energyField, length(densityField), 1)
 
         end
 
@@ -225,6 +255,7 @@ function main()
     writedlm(prefix*"twinN.csv", storeXYE_twin[4,:,:], ',')
     writedlm(prefix*"twinDens.csv", storeDens_twin, ',')
     writedlm(prefix*"twinEnergy.csv", storeEnergy_twin, ',')
+    writedlm(prefix*"twinXfld.csv", storeX_twin, ',')
 
     writedlm(prefix*"e1X.csv", storeXYE_e1[1,:,:], ',')
     writedlm(prefix*"e1Y.csv", storeXYE_e1[2,:,:], ',')

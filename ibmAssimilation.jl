@@ -59,10 +59,27 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
         maxpasses = 100
         doWrite = i==1
 
-        updArray, origField = applyCorrectionsMoveDirectMultiple(copy(updArray), densityField, origField, xlim, ylim, dxy, maxpasses, doWrite)
-        updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
-        
-        ensemble[i] = updArray
+        if as.resampleAll # Full resampling strategy
+
+            energyField, xrng, yrng = computeAverageEnergyField(updArray, xlim, ylim, dxy, 0.0)
+            
+            updArray = applyCorrectionsResample(copy(updArray), densityField, energyField, xlim, ylim, dxy, doWrite)            
+            ensemble[i] = updArray
+
+        else # Adjustment strategy
+            #updArray, origField = applyCorrectionsMoveDirectMultiple(copy(updArray), densityField, origField, xlim, ylim, dxy, maxpasses, doWrite)
+            #updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
+            #if i==1
+                #println("Warning, calling only sinkhorn for ensemble member 1!!!")
+
+                updArray, origField = applyCorrectionsSinkhorn(copy(updArray), densityField, origField, xlim, ylim, dxy, doWrite)
+                updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
+                ensemble[i] = updArray
+            #end
+                    
+        end
+
+        #ensemble[i] = updArray
     end
     
 
