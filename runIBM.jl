@@ -18,6 +18,7 @@ include("util.jl")
 include("measurementModel.jl")
 include("applyCorrectionsIBM.jl")
 include("applyCorrectionsResample.jl")
+include("applyCorrectionsSinkhorn.jl")
 include("ibmAssimilation.jl")
 
 function readCurrentField(filename)
