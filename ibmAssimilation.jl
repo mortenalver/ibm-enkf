@@ -45,41 +45,57 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     
     
     # Apply corrections for each ensemble member:
-    aSums = zeros(as.N, 2)   
-    for i=1:as.N
 
-        # Compute the deviation field for this member:
-        origField = reshape(densEnsemble[:,i], dimensions[1], dimensions[2])
-        densityField = reshape(X_upd[:,i], dimensions[1], dimensions[2])
-        devi = densityField - origField
+    if as.resampleAll # Full resampling strategy
 
-        # Get the IBM for this ensemble member:
-        indsArray = ensemble[i]
-        updArray = indsArray
-        maxpasses = 100
-        doWrite = i==1
+        #aSums = zeros(as.N, 2)   
+        for i=1:as.N
 
-        if as.resampleAll # Full resampling strategy
+            # Compute the deviation field for this member:
+            origField = reshape(densEnsemble[:,i], dimensions[1], dimensions[2])
+            densityField = reshape(X_upd[:,i], dimensions[1], dimensions[2])
+            devi = densityField - origField
+
+            # Get the IBM for this ensemble member:
+            indsArray = ensemble[i]
+            updArray = indsArray
+            maxpasses = 100
+            doWrite = i==1
 
             energyField, xrng, yrng = computeAverageEnergyField(updArray, xlim, ylim, dxy, 0.0)
             
             updArray = applyCorrectionsResample(copy(updArray), densityField, energyField, xlim, ylim, dxy, doWrite)            
             ensemble[i] = updArray
+        end
 
-        else # Adjustment strategy
+    else # Adjustment strategy
+
+        for i=1:as.N
+
+            # Compute the deviation field for this member:
+            origField = reshape(densEnsemble[:,i], dimensions[1], dimensions[2])
+            densityField = reshape(X_upd[:,i], dimensions[1], dimensions[2])
+            devi = densityField - origField
+
+            # Get the IBM for this ensemble member:
+            indsArray = ensemble[i]
+            updArray = indsArray
+        
+            doWrite = i==1
+
             #updArray, origField = applyCorrectionsMoveDirectMultiple(copy(updArray), densityField, origField, xlim, ylim, dxy, maxpasses, doWrite)
             #updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
             #if i==1
                 #println("Warning, calling only sinkhorn for ensemble member 1!!!")
 
-                updArray, origField = applyCorrectionsSinkhorn(copy(updArray), densityField, origField, xlim, ylim, dxy, doWrite)
-                updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
-                ensemble[i] = updArray
+            updArray, origField = applyCorrectionsSinkhorn(copy(updArray), densityField, origField, xlim, ylim, dxy, doWrite)
+            updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
+            ensemble[i] = updArray
             #end
-                    
+    
         end
+        
 
-        #ensemble[i] = updArray
     end
     
 

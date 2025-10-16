@@ -57,9 +57,9 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r3"
+    simnamePrefix = "r7"
     dt = 0.1 # Time step
-    t_end = 100 # Simulation end time
+    t_end = 51.6 # Simulation end time
     storageInterval = 2
     initFoodLevel = 1.0
     
@@ -167,7 +167,7 @@ function main(setDryrun, setResample)
         if mod(tstep, as.assimInterval) == 0
             println("Assim at tstep=", tstep)
             
-            doPlot = tstep==50
+            doPlot = tstep==15
             updatedEnsemble = ibmAssimilation(as, deepcopy(ensemble), xlim, ylim, dxy, doPlot)
             
             if !as.dryRun
