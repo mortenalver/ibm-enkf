@@ -103,8 +103,8 @@ function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, ms)
     v_y_new += pertY
 
     # Update the speed towards the newly computed speed:
-    ind.v_x += dt*0.6*(v_x_new - ind.v_x)
-    ind.v_y += dt*0.6*(v_y_new - ind.v_y)
+    ind.v_x += dt*ms.speedUpdateRate*(v_x_new - ind.v_x)
+    ind.v_y += dt*ms.speedUpdateRate*(v_y_new - ind.v_y)
 
     # If individual interaction is activated, orient away from close individuals:
     if ms.indsInteraction

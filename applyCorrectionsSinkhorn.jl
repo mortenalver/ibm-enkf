@@ -33,7 +33,7 @@ function applyCorrectionsSinkhorn(indsArray, correctedField, origField, xlim, yl
 
             distVec = [i1-i2 j1-j2]
             dist = distVec[1]*distVec[1]+distVec[2]*distVec[2]
-            C[i,j] = dist
+            C[i,j] = dist.^0.8
         end
     end
     if doWrite

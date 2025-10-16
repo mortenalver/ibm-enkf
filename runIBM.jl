@@ -57,9 +57,9 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r7"
+    simnamePrefix = "r8"
     dt = 0.1 # Time step
-    t_end = 51.6 # Simulation end time
+    t_end = 71.6 # Simulation end time
     storageInterval = 2
     initFoodLevel = 1.0
     
@@ -67,6 +67,7 @@ function main(setDryrun, setResample)
     ms = ModelSettings()
     ms.migration = true
     ms.indsInteraction = false
+    ms.speedUpdateRate = 0.6 # Multiplier for speed update - lower means more intertia in speed updates
     ms.indsInteractionThresh = 0.22
     ms.indsInteractionStrength = 0.1
     ms.nInd = 2000 #6000 # Number of individuals
