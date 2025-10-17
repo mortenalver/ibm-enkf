@@ -64,7 +64,7 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r12"
+    simnamePrefix = "r13"
     dt = 0.1 # Time step
     t_end = 105.6 # Simulation end time
     storageInterval = 2
@@ -72,23 +72,23 @@ function main(setDryrun, setResample)
     
     # Simulation parameters:
     ms = ModelSettings()
-    ms.migration = false
-    ms.indsInteraction = false
+    ms.migration = false # If true, periodic migration through the four corners of the domain. If false, migration controlled by food field and random movement.
+    ms.indsInteraction = false # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
+    ms.indsInteractionThresh = 0.22 # Distance threshold for individual interaction.
+    ms.indsInteractionStrength = 0.1 # Strength of individual interaction
     ms.speedUpdateRate = 0.6 # Multiplier for speed update - lower means more intertia in speed updates
-    ms.indsInteractionThresh = 0.22
-    ms.indsInteractionStrength = 0.1
     ms.nInd = 2000 #6000 # Number of individuals
     ms.nPerInd = 1.0 # individuals per super individual
-    ms.minNormSpeed = 0.5
-    ms.scopeNormSpeed = 1.8
+    ms.minNormSpeed = 0.5 # In migration mode, determines minimum typical speed of individuals.
+    ms.scopeNormSpeed = 1.8 # In migration mode, determines scope of the typical speed of individuals.
 
     # Assimilation settings:
     as = AssimSettings()
-    as.dryRun = setDryrun
-    as.N = 100# 100
-    as.resampleAll = setResample # True to use resampling strategy
-    as.assimInterval = 15
-    as.speedsInStateVec = false
+    as.dryRun = setDryrun # If true, the assimilation process will be run but changes will not be applied.
+    as.N = 100# 100 # Number of ensemble members.
+    as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
+    as.assimInterval = 15 # Time steps between each assimilation procedure
+    as.speedsInStateVec = false # If true, include mean speed components per grid cell in the state vector.
 
     # Modify sim name according to run mode:
     simname = simnamePrefix*"_"
@@ -99,13 +99,12 @@ function main(setDryrun, setResample)
         simname = simname*"resample_"
     end
 
-    # Define area for density fields:
+    # Define domain area:
     xlim = [0, 20]
     ylim = [0, 15]
-    dxy = 0.5#(xlim[2]-xlim[1])/100
+    dxy = 0.5 # Grid resolution
     
     
-
     # Number of time steps:
     ntimes = round(Int, t_end/dt)
 
@@ -113,9 +112,8 @@ function main(setDryrun, setResample)
     storeCount = 0
     storeXYE_twin = fill(0.0, 4, ms.nInd, nstoretimes)
     storeXYE_e1 = fill(0.0, 4, ms.nInd, nstoretimes)
-    eFillval = 0.0#NaN
-    #allX = zeros(nInd, ntimes)
-    #allY = zeros(nInd, ntimes)
+    eFillval = 0.0
+
     println("dt=", dt, ", t_end=",t_end,", steps=",ntimes)
 
     # Ensemble setup:
@@ -128,7 +126,7 @@ function main(setDryrun, setResample)
     
         for i = 1:ms.nInd
             normspeed = ms.minNormSpeed+ms.scopeNormSpeed*rand(Float64)
-            # Modify speed for twin to create an offset:
+            # Modify speed for twin to create an offset (only affects simulation with migration activated):
             if ensI != Ndim
                 normspeed = 1.25*normspeed # Non-twin is 25% faster
             end
@@ -153,28 +151,27 @@ function main(setDryrun, setResample)
     X_fld = fill(initFoodLevel, size(densityField,1), size(densityField,2),Ndim)
 
 
+    # Main loop:
     for tstep = 1:ntimes
 
         t = (tstep-1)*dt
         println(0.1*round(Int, 10.0*t))
+
         # Time step of IBM:
         for ensI = 1:Ndim
-            
-            
+
+            # Roll random numbers used to perturb individuals' speeds:
             perturb = zeros(Float64, 20, 4)
-            #if ensI < Ndim
             for ptI = 1:size(perturb,1)
                 perturb[ptI,:] = [1.0*randn(Float64), 1.0*randn(Float64),
                     xlim[1]+rand(Float64)*(xlim[2]-xlim[1]), ylim[1]+rand(Float64)*(ylim[2]-ylim[1])]
             end
-            #end
-
+            
             indsArray = ensemble[ensI]
             X_fld_upd = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
             X_fld[:,:,ensI] = X_fld_upd
         end
 
-        #println(X_fld[10,10,1])
         if mod(tstep, as.assimInterval) == 0
             println("Assim at tstep=", tstep)
             
