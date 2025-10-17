@@ -59,7 +59,7 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r11"
+    simnamePrefix = "r12"
     dt = 0.1 # Time step
     t_end = 105.6 # Simulation end time
     storageInterval = 2
@@ -67,7 +67,7 @@ function main(setDryrun, setResample)
     
     # Simulation parameters:
     ms = ModelSettings()
-    ms.migration = true
+    ms.migration = false
     ms.indsInteraction = false
     ms.speedUpdateRate = 0.6 # Multiplier for speed update - lower means more intertia in speed updates
     ms.indsInteractionThresh = 0.22

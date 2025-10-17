@@ -82,9 +82,34 @@ function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, ms)
             v_x_new = v_norm*vecToRef[1]/distToRef
             v_y_new = v_norm*vecToRef[2]/distToRef
         end
-    else # No migration
-        v_x_new = randn()
-        v_y_new = randn()
+    else # No migration.
+        # We first decide on a vector tendency, then add random movement to it.
+        tend_x = 0.0
+        tend_y = 0.0
+        # If we are near an edge, add a tendency away from the edge:
+        bnd = 5/dxy
+        if ix < bnd
+            tend_x += 1.0*(bnd-ix)/bnd
+        end
+        if size(X_fld,1)-ix < bnd
+            tend_x -= 1.0*(bnd-(size(X_fld,1)-ix))/bnd
+        end
+        if iy < bnd
+            tend_y += 1.0*(bnd-iy)/bnd
+        end
+        if size(X_fld,2)-iy < bnd
+            tend_y -= 1.0*(bnd-(size(X_fld,2)-iy))/bnd
+        end
+        # Then, add a tendency depending along the local X_fld gradient:
+        if ix>1 && ix<size(X_fld,1)
+            tend_x += 1.0*(X_fld[ix+1,iy]-X_fld[ix-1,iy])
+        end
+        if iy>1 && iy<size(X_fld,2)
+            tend_y += 1.0*(X_fld[ix,iy+1]-X_fld[ix,iy-1])
+        end
+
+        v_x_new = tend_x + randn()
+        v_y_new = tend_y + randn()
     end
 
     # Add random perturbations to the speed components:
