@@ -34,6 +34,7 @@ end
 mutable struct ModelSettings
     nInd::Int
     nPerInd::Float64
+    speedUpdateRate::Float64
     indsInteraction::Bool
     migration::Bool
     indsInteractionThresh::Float64
@@ -41,7 +42,7 @@ mutable struct ModelSettings
     minNormSpeed::Float64
     scopeNormSpeed::Float64
 
-    ModelSettings() = new(2000,1,true,false,1.0,2,3)
+    ModelSettings() = new(2000,1,0.6,true,false,1.0,2,3)
 end
 
 # Struct holding assimilation settings:
@@ -50,16 +51,17 @@ mutable struct AssimSettings
     N::Int
     assimInterval::Int
     resampleAll::Bool
+    speedsInStateVec::Bool
 
-    AssimSettings() = new(false,2,10,false)
+    AssimSettings() = new(false,2,10,false,true)
 end
 
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r8"
+    simnamePrefix = "r11"
     dt = 0.1 # Time step
-    t_end = 71.6 # Simulation end time
+    t_end = 105.6 # Simulation end time
     storageInterval = 2
     initFoodLevel = 1.0
     
@@ -81,6 +83,7 @@ function main(setDryrun, setResample)
     as.N = 100# 100
     as.resampleAll = setResample # True to use resampling strategy
     as.assimInterval = 15
+    as.speedsInStateVec = false
 
     # Modify sim name according to run mode:
     simname = simnamePrefix*"_"
@@ -135,6 +138,8 @@ function main(setDryrun, setResample)
     densityField, xrng, yrng = computeDensityField(ensemble[Ndim], xlim, ylim, dxy)
     storeDens_twin = fill(0.0, length(densityField), nstoretimes)
     storeEnergy_twin = fill(0.0, length(densityField), nstoretimes)
+    storeU_twin = fill(0.0, length(densityField), nstoretimes)
+    storeV_twin = fill(0.0, length(densityField), nstoretimes)
     storeX_twin = fill(0.0, length(densityField), nstoretimes)
     storeDens_e = fill(0.0, length(densityField), nstoretimes)
     storeEnergy_e = fill(0.0, length(densityField), nstoretimes)
@@ -202,6 +207,9 @@ function main(setDryrun, setResample)
             storeDens_twin[:,storeCount] = reshape(densityField, length(densityField), 1)
             energyField, xrng, yrng = computeAverageEnergyField(ensemble[Ndim], xlim, ylim, dxy, eFillval)
             storeEnergy_twin[:,storeCount] = reshape(energyField, length(densityField), 1)
+            tmpU, tmpV = computeAverageSpeedField(ensemble[Ndim],xlim, ylim, dxy, 0.0)
+            storeU_twin[:,storeCount] = reshape(tmpU, length(tmpU), 1)
+            storeV_twin[:,storeCount] = reshape(tmpV, length(tmpV), 1)
 
             # Store X field for twin:
             storeX_twin[:,storeCount] = reshape(X_fld[:,:,Ndim], length(densityField), 1)
@@ -257,6 +265,8 @@ function main(setDryrun, setResample)
     writedlm(prefix*"twinN.csv", storeXYE_twin[4,:,:], ',')
     writedlm(prefix*"twinDens.csv", storeDens_twin, ',')
     writedlm(prefix*"twinEnergy.csv", storeEnergy_twin, ',')
+    writedlm(prefix*"twinU.csv", storeU_twin, ',')
+    writedlm(prefix*"twinV.csv", storeV_twin, ',')
     writedlm(prefix*"twinXfld.csv", storeX_twin, ',')
 
     writedlm(prefix*"e1X.csv", storeXYE_e1[1,:,:], ',')

@@ -5,6 +5,8 @@ function enKF(X, M, xloc, d, Rval)
     for i=1:N
         D[:,i] = d
     end
+    #TODO: add observation noise to D matrix
+    
     #println("D: ", size(D))
     Rvec = Rval*ones(Float64, length(d))
     R = Diagonal(Rvec)
