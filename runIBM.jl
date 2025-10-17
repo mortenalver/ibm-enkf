@@ -2,8 +2,9 @@
 #import Pkg; Pkg.add("PyPlot")
 #import Pkg; Pkg.add("NCDatasets")
 #import Pkg; Pkg.add("Statistics")
+#import Pkg; Pkg.add("OptimalTransport")
+
 using Plots
-#using PyPlot
 using NCDatasets
 using Statistics
 using LinearAlgebra
@@ -11,7 +12,6 @@ using DelimitedFiles
 using OptimalTransport
 
 include("ibmModel.jl")
-#include("ibmModel2.jl")
 include("computeDensityField.jl")
 include("enKF.jl")
 include("util.jl")
