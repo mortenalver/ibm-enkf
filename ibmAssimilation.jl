@@ -172,6 +172,6 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
         end
     end
     
-
-    return ensemble
+    # Return the updated ensemble and the corrected density field straight from the EnKF:
+    return ensemble, updFieldPre
 end

@@ -16,6 +16,7 @@ using LinearAlgebra
 using DelimitedFiles
 using OptimalTransport
 
+include("settings.jl")
 include("ibmModel.jl")
 include("computeDensityField.jl")
 include("enKF.jl")
@@ -35,39 +36,14 @@ function readCurrentField(filename)
     return uval, vval
 end
 
-# Struct holding model settings:
-mutable struct ModelSettings
-    nInd::Int
-    nPerInd::Float64
-    speedUpdateRate::Float64
-    indsInteraction::Bool
-    migration::Bool
-    indsInteractionThresh::Float64
-    indsInteractionStrength::Float64
-    minNormSpeed::Float64
-    scopeNormSpeed::Float64
 
-    ModelSettings() = new(2000,1,0.6,true,false,1.0,2,3)
-end
-
-# Struct holding assimilation settings:
-mutable struct AssimSettings
-    dryRun::Bool
-    N::Int
-    assimInterval::Int
-    resampleAll::Bool
-    speedsInStateVec::Bool
-    nmeas::Int 
-
-    AssimSettings() = new(false,2,10,false,true,1000)
-end
 
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r13"
+    simnamePrefix = "r14"
     dt = 0.1 # Time step
-    t_end = 105.6 # Simulation end time
+    t_end = 55.62 # Simulation end time
     storageInterval = 2
     initFoodLevel = 1.0
     
@@ -88,9 +64,9 @@ function main(setDryrun, setResample)
     as.dryRun = setDryrun # If true, the assimilation process will be run but changes will not be applied.
     as.N = 100# 100 # Number of ensemble members.
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
-    as.assimInterval = 15 # Time steps between each assimilation procedure
+    as.assimInterval = 20 # Time steps between each assimilation procedure
     as.speedsInStateVec = false # If true, include mean speed components per grid cell in the state vector.
-    as.nmeas = 2*800 # Number of randomly distributed meaurements 
+    as.nmeas = 2*800 #2*800 # Number of randomly distributed meaurements 
    
     # Modify sim name according to run mode:
     simname = simnamePrefix*"_"
@@ -148,10 +124,14 @@ function main(setDryrun, setResample)
     storeX_twin = fill(0.0, length(densityField), nstoretimes)
     storeDens_e = fill(0.0, length(densityField), nstoretimes)
     storeEnergy_e = fill(0.0, length(densityField), nstoretimes)
+    storeEnKF_field = fill(0.0, length(densityField), nstoretimes)
 
     # Initialize food field on same dimensions as the density field:
     X_fld = fill(initFoodLevel, size(densityField,1), size(densityField,2),Ndim)
 
+    # Initialize variable to hold the updated density field from the last
+    # EnKF run (before application to the IBM)
+    enkfField = zeros(Float64,size(densityField,1), size(densityField,2))
 
     # Main loop:
     for tstep = 1:ntimes
@@ -178,7 +158,7 @@ function main(setDryrun, setResample)
             println("Assim at tstep=", tstep)
             
             doPlot = tstep==15
-            updatedEnsemble = ibmAssimilation(as, deepcopy(ensemble), xlim, ylim, dxy, doPlot)
+            updatedEnsemble, enkfField = ibmAssimilation(as, deepcopy(ensemble), xlim, ylim, dxy, doPlot)
             
             if !as.dryRun
                 ensemble = updatedEnsemble
@@ -214,6 +194,9 @@ function main(setDryrun, setResample)
             tmpU, tmpV = computeAverageSpeedField(ensemble[Ndim],xlim, ylim, dxy, 0.0)
             storeU_twin[:,storeCount] = reshape(tmpU, length(tmpU), 1)
             storeV_twin[:,storeCount] = reshape(tmpV, length(tmpV), 1)
+
+            # Store latest EnKF field:
+            storeEnKF_field[:,storeCount] = reshape(enkfField, length(enkfField),1)
 
             # Store X field for twin:
             storeX_twin[:,storeCount] = reshape(X_fld[:,:,Ndim], length(densityField), 1)
@@ -259,8 +242,8 @@ function main(setDryrun, setResample)
     # Storage directory:
     prefix = "C:/temp/"*simname
     
-    # Store a single file giving the field dimensions:
-    writedlm(prefix*"fieldDims.csv", size(densityField), ',')
+    # Store a single file giving the field dimensions and the assimilation interval divided by storage interval:
+    writedlm(prefix*"fieldDims.csv", [size(densityField,1) size(densityField,2) as.assimInterval/storageInterval], ',')
 
     # Store twin states to files:
     writedlm(prefix*"twinX.csv", storeXYE_twin[1,:,:], ',')
@@ -272,6 +255,8 @@ function main(setDryrun, setResample)
     writedlm(prefix*"twinU.csv", storeU_twin, ',')
     writedlm(prefix*"twinV.csv", storeV_twin, ',')
     writedlm(prefix*"twinXfld.csv", storeX_twin, ',')
+
+    writedlm(prefix*"enkfField.csv", storeEnKF_field, ',')
 
     writedlm(prefix*"e1X.csv", storeXYE_e1[1,:,:], ',')
     writedlm(prefix*"e1Y.csv", storeXYE_e1[2,:,:], ',')
