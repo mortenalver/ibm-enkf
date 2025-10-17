@@ -1,13 +1,12 @@
 
 function getM(dimensions, as)
-   nmeas = 2*800
    npos = dimensions[1]*dimensions[2]
    nPerPos = 1 
    if as.speedsInStateVec
       nPerPos = 3
    end
-   M = zeros(Float64, nmeas, npos*nPerPos)
-   for i=1:nmeas
+   M = zeros(Float64, as.nmeas, npos*nPerPos)
+   for i=1:as.nmeas
       state = Int(ceil(npos*rand(Float64)))
       #println(state)
       M[i, state] = 1

@@ -57,8 +57,9 @@ mutable struct AssimSettings
     assimInterval::Int
     resampleAll::Bool
     speedsInStateVec::Bool
+    nmeas::Int 
 
-    AssimSettings() = new(false,2,10,false,true)
+    AssimSettings() = new(false,2,10,false,true,1000)
 end
 
 function main(setDryrun, setResample)
@@ -89,7 +90,8 @@ function main(setDryrun, setResample)
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 15 # Time steps between each assimilation procedure
     as.speedsInStateVec = false # If true, include mean speed components per grid cell in the state vector.
-
+    as.nmeas = 2*800 # Number of randomly distributed meaurements 
+   
     # Modify sim name according to run mode:
     simname = simnamePrefix*"_"
     if as.dryRun
