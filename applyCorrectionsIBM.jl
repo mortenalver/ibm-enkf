@@ -20,6 +20,8 @@ function getIndex(x, y, xlim, ylim, dxy)
 end
 
 function applyCorrectionsResize(indsArray, correctedField, origField, xlim, ylim, dxy, doPrint)
+    # Apply corrections by scaling the n value for individuals according
+    # to the difference between current and desired density per grid cell.
     aSumBefore = sum(abs.(correctedField-origField))
     updatedField = origField
     densCorr = correctedField-updatedField
@@ -60,6 +62,7 @@ function applyCorrectionsResize(indsArray, correctedField, origField, xlim, ylim
     
     return indsArray, updatedField, updatedCells
 end
+
 
 function applyCorrectionsMove(indsArray, correctedField, origField, xlim, ylim, dxy)
     

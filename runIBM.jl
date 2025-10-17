@@ -1,3 +1,8 @@
+# This is the main file. To run the simulation in a new Julia REPL, first 
+# evaluate this file, then call the main function from the command line.
+
+
+# The following statements must be run once to install each library:
 #import Pkg; Pkg.add("Plots")
 #import Pkg; Pkg.add("PyPlot")
 #import Pkg; Pkg.add("NCDatasets")

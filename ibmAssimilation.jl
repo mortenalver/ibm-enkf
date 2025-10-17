@@ -1,7 +1,9 @@
 
 function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
+    # Handle the assimilation process from derivation of state values
+    # via calling the Ensemble Kalman filter to updating the IBM.
 
-    Ndim = as.N + 1
+    Ndim = as.N + 1 # There are N ensemble members plus a twin
 
     # Define ranges:
     xrng = range(start=xlim[1], stop=xlim[2], step=dxy)

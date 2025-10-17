@@ -1,6 +1,6 @@
 
 function applyCorrectionsResample(indsArray, correctedField, energyField, xlim, ylim, dxy, doPrint)
-    # Adapt individual model by resampling all individuals.
+    # Adapt individual model by resampling all individuals randomly.
 
     # Make a map of individuals vs. grid indexes:
     totInd = 0.0
@@ -14,7 +14,6 @@ function applyCorrectionsResample(indsArray, correctedField, energyField, xlim, 
             indMap[idx] = totInd
         end
     end
-    
 
     # Then roll uniform random numbers once per individual,
     # choose cell and move the individual:
@@ -28,12 +27,10 @@ function applyCorrectionsResample(indsArray, correctedField, energyField, xlim, 
         #xold = ind.x
         ind.x = (cellI+rand())*dxy
         ind.y = (cellJ+rand())*dxy
+
         # Update energy of this individual to the mean energy of the cell it moves to:
         ind.E = energyField[cellI,cellJ]
-        #if i==10
-        #    print(ind.E)
-        #end
-        #indsArray[i] = ind
+
     end
 
     return indsArray
