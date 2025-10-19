@@ -1,7 +1,7 @@
 
 %prefix = 'C:/temp/r9_';
-prefix = 'C:/temp/r14_resample_';
-%prefix = 'C:/temp/d_r12_resample_';
+prefix = 'C:/temp/r17_resample_';
+%prefix = 'C:/temp/d_r17_resample_';
 
 animate = 1;
 plotInd = 25;
@@ -18,6 +18,7 @@ E_twin = dlmread([prefix 'twinE.csv']);
 N_twin = dlmread([prefix 'twinN.csv']);
 U_twin = dlmread([prefix 'twinU.csv']);
 V_twin = dlmread([prefix 'twinV.csv']);
+food_twin = dlmread([prefix 'twinFood.csv']);
 dens_twin = dlmread([prefix 'twinDens.csv']);
 energy_twin = dlmread([prefix 'twinEnergy.csv']);
 Xfld_twin = dlmread([prefix 'twinXfld.csv']);
@@ -28,6 +29,7 @@ x_1 = dlmread([prefix 'e1X.csv']);
 y_1 = dlmread([prefix 'e1Y.csv']);
 E_1 = dlmread([prefix 'e1E.csv']);
 N_1 = dlmread([prefix 'e1N.csv']);
+food_1 = dlmread([prefix 'e1Food.csv']);
 dens_e = dlmread([prefix 'eDens.csv']);
 energy_e = dlmread([prefix 'eEnergy.csv']);
 

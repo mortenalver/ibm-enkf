@@ -15,9 +15,12 @@ function applyCorrectionsSinkhorn(indsArray, correctedField, origField, xlim, yl
     #println(size(corr))
 
     # Flatten original and corrected fields:
+    # a = max.(0.0, reshape(orig, length(orig)))
+    # b = max.(0.8, reshape(corr, length(corr)))
     a = reshape(orig, length(orig))
     b = reshape(corr, length(corr))
     b = b ./ (sum(b)/sum(a)) # Normalize so their sums are equal
+    
     # Set up cost matrix:
     if doWrite
         println("Setting up cost matrix")
@@ -33,15 +36,36 @@ function applyCorrectionsSinkhorn(indsArray, correctedField, origField, xlim, yl
 
             distVec = [i1-i2 j1-j2]
             dist = distVec[1]*distVec[1]+distVec[2]*distVec[2]
-            C[i,j] = dist.^0.8
+            C[i,j] = dist#.^0.8
         end
     end
     if doWrite
         println("Calling sinkhorn algorithm. sizes: "*string(size(corr))*" "*string(size(a))*" "*string(size(C)))
     end
-    ot = sinkhorn(a, b, C, 0.95, maxiter=100000)#, alg=SinkhornGibbs())
+
+    
+    # Call sinkhorn algotithm:
+    #t = sinkhorn(a, b, C, 0.95, maxiter=200000)#, alg=SinkhornGibbs())
+    #ot = quadreg(a, b, C, 0.95, maxiter=2000)#, alg=SinkhornGibbs())
+    #ot = sinkhorn(a, b, C, 5.00, maxiter=200000)#, alg=SinkhornGibbs())
+    
+    # ot = sinkhorn(a, b, C, 5.0, 
+    #     SinkhornStabilized(; absorb_tol=30_000_000); 
+    #     maxiter=150000)
+    
+    ot = sinkhorn(a, b, C, 3.0, 
+        SinkhornEpsilonScaling(
+            SinkhornGibbs();
+            factor=0.65,#1//2,
+            steps=5,
+        );
+        maxiter=50_000)
+
+    #ot0 = copy(ot)
+    #optCost = sinkhorn2(a, b, C, 1.0, maxiter=200000, plan=ot)
+    #println("Diff OT: "*string(maximum((abs.(ot-ot0))[:])))
+    #println("Diff plans: "*string(ot[1,1]-ot0[1,1]))
     if ~isnan(ot[1,1])
-        #println("Moving inds....")
         # Go through each individual, find its cell and the transport distribution for that cell:
         for i=1:length(indsArray)
             #if doWrite

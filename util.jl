@@ -37,3 +37,9 @@ function getRandomField(dims, intensity, ndots, dotRng)
 
     return field
 end
+
+function getGridCell(ind, xlim, ylim, dxy)
+    ix = Int(floor((ind.x - xlim[1])/dxy))
+    iy = Int(floor((ind.y - ylim[1])/dxy))
+    return ix, iy
+end

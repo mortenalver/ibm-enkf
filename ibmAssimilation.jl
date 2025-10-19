@@ -3,6 +3,8 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     # Handle the assimilation process from derivation of state values
     # via calling the Ensemble Kalman filter to updating the IBM.
 
+    println("doplot="*string(doPlot))
+
     Ndim = as.N + 1 # There are N ensemble members plus a twin
 
     # Define ranges:
@@ -53,10 +55,15 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
 
     # Ensemble Kalman filter:
     M = getM(dimensions, as) # Measurement model
-    xloc = getLocMatrix(dimensions, M, 4)
+    xloc = getLocMatrix(dimensions, M, as.localizationDist)
     y = M*densTwin # Measurement vector based on twin
-    Rval = 2.0 # Assumed measurement uncertainty
-    X_upd = enKF(densEnsemble, M, xloc, y, Rval) # Get corrected ensemble matrix X_upd
+    Rval = as.measVar # Assumed measurement uncertainty
+    #X_upd = enKF(densEnsemble, M, xloc, y, Rval, as) # Get corrected ensemble matrix X_upd
+
+    Rvec = Rval*ones(Float64, size(M,1))
+    R = Diagonal(Rvec)
+    X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
+    #meanField2 = reshape(X_upd_mean, dimensions[1], dimensions[2])
 
     #A = densEnsemble - (1/N)*densEnsemble*ones(N,1)*ones(1,N)
     #stdA = std(A, dims=2)
@@ -96,7 +103,7 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     else # Adjustment strategy
 
         for i=1:as.N
-
+            println("i="*string(i))
             # Compute the deviation field for this member:
             origField = reshape(densEnsemble[:,i], dimensions[1], dimensions[2])
             densityField = reshape(X_upd[:,i], dimensions[1], dimensions[2])
@@ -156,9 +163,12 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
 
         ind = getStateIndex(dimensions,20, 20)
         covMat = getCorrelationMatrix(dimensions, densEnsemble, ind)
+
         
-        display(plot(heatmap(twinField, title="Twin field"), heatmap(meanField,title="Orig mean"), heatmap(twinField-meanField,title="Twin - orig"), 
         #heatmap(reshape(xloc[:,1],dimensions[1], dimensions[2]),title="Localization matrix"), 
+
+        display(plot(heatmap(twinField, title="Twin field"), heatmap(meanField,title="Orig mean"), 
+        heatmap(twinField-meanField,title="Twin - orig"), 
         heatmap(covMat,title="Pre covariance"), 
         heatmap(updFieldPre,title="Updated pre-IBM"), heatmap(updFieldPre-twinField,title="Twin - pre-IBM"),
         heatmap(updFieldPost,title="Updated mean"), heatmap(updFieldPre-updFieldPost,title="Pre-IBM - post-IBM", clim=(-5, 5)), 

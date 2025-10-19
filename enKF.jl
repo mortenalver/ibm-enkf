@@ -1,11 +1,15 @@
 
-function enKF(X, M, xloc, d, Rval)
+function enKF(X, M, xloc, d, Rval, as)
     N = size(X)[2]
     D = zeros(Float64, length(d), N)
+    Rstd = sqrt(Rval)
     for i=1:N
-        D[:,i] = d
+        if as.perturbMeasurements
+            D[:,i] = d + Rstd*randn(size(d))
+        else
+            D[:,i] = d
+        end
     end
-    #TODO: add observation noise to D matrix
     
     #println("D: ", size(D))
     Rvec = Rval*ones(Float64, length(d))

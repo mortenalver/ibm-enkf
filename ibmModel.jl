@@ -108,8 +108,8 @@ function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, ms)
             tend_y += 1.0*(X_fld[ix,iy+1]-X_fld[ix,iy-1])
         end
 
-        v_x_new = tend_x + randn()
-        v_y_new = tend_y + randn()
+        v_x_new = 1.5*tend_x + randn()
+        v_y_new = 1.5*tend_y + randn()
     end
 
     # Add random perturbations to the speed components:
@@ -199,7 +199,7 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
     X_fld = X_fld + dt.*X_pert
 
     # Add food everywhere to a maximum of 2:
-    X_fld = X_fld + fill(dt*0.025, size(X_fld,1), size(X_fld,2))
+    X_fld = X_fld + fill(dt*2.0*0.025, size(X_fld,1), size(X_fld,2))
     X_fld = min.(X_fld, 2.0)
     return X_fld
 end

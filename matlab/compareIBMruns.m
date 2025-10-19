@@ -2,7 +2,8 @@ direc = "C:/temp/";
 
 
 %runs = ["d_r9_resample_", "r9_", "r9_resample_"];
-runs = ["d_r14_resample_", "r14_", "r14_resample_"];
+%runs = ["d_r17_resample_", "r17_", "r17_resample_"];
+runs = ["d_r17_resample_", "r17_", "r18_"];
 runNames = ["Dry run", "Assim", "Assim resample"];
 
 dims_and_int = dlmread(direc+runs(1)+"fieldDims.csv");
@@ -26,7 +27,7 @@ for i=1:length(runs)
         rmsDens = zeros(size(dens_twin,2), length(runs))
         rmsE = zeros(size(dens_twin,2), length(runs))
         rmsEnkf = zeros(size(dens_twin,2), length(runs))
-        
+        rmsEnkfIBM = zeros(size(dens_twin,2), length(runs))
     end
 
     for j=1:size(dens_twin,2)
@@ -40,16 +41,23 @@ for i=1:length(runs)
         rmsE(j,i) = rms(devi);
 
         devi = dens_e(:,j) - enkfField(:,j);
+        rmsEnkfIBM(j,i) = rms(devi);
+        devi = dens_twin(:,j) - enkfField(:,j);
         rmsEnkf(j,i) = rms(devi);
+        
     end
 end
 %%
 figure, tiledlayout(2,3, "TileSpacing","compact");
 nexttile, plot(rmsDens), legend(runNames), title('Density RMS'), grid on
+hold on
+plot((assimInt:assimInt:size(rmsDens,1)), rmsEnkf(assimInt:assimInt:end,:),'--')
+legend([runNames runNames])
 nexttile, plot(rmsE), legend(runNames), title('Energy RMS'), grid on
 % Plot rmsEnkf only at assimilation times (comparison is only valid at
 % those times):
-nexttile, plot(rmsEnkf(assimInt:assimInt:end,:)), legend(runNames), title('Update - EnKF field RMS'), grid on
+nexttile, plot(rmsEnkfIBM(assimInt:assimInt:end,:)), legend(runNames), title('IBM update accuracy (RMS from EnKF field)'), grid on
 %nexttile, plot(rmsEnkf(:,:)), legend(runNames), title('Update - EnKF field RMS'), grid on
 nexttile, bar(mean(rmsDens,1)), title('Mean density RMS'), xticklabels(runNames)
 nexttile, bar(mean(rmsE,1)), title('Mean energy RMS'), xticklabels(runNames)
+nexttile, plot(rmsEnkf(assimInt:assimInt:end,:)), legend(runNames), title('EnKF accuracy (RMS from true field)'), grid on

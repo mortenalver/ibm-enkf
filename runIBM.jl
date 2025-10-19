@@ -8,6 +8,7 @@
 #import Pkg; Pkg.add("NCDatasets")
 #import Pkg; Pkg.add("Statistics")
 #import Pkg; Pkg.add("OptimalTransport")
+#import Pkg; Pkg.add("DataAssim")
 
 using Plots
 using NCDatasets
@@ -15,6 +16,7 @@ using Statistics
 using LinearAlgebra
 using DelimitedFiles
 using OptimalTransport
+using DataAssim
 
 include("settings.jl")
 include("ibmModel.jl")
@@ -41,9 +43,9 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r14"
+    simnamePrefix = "r18"
     dt = 0.1 # Time step
-    t_end = 55.62 # Simulation end time
+    t_end = 25.0 # Simulation end time
     storageInterval = 2
     initFoodLevel = 1.0
     
@@ -62,12 +64,15 @@ function main(setDryrun, setResample)
     # Assimilation settings:
     as = AssimSettings()
     as.dryRun = setDryrun # If true, the assimilation process will be run but changes will not be applied.
-    as.N = 100# 100 # Number of ensemble members.
+    as.N = 150# 100 # Number of ensemble members.
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 20 # Time steps between each assimilation procedure
     as.speedsInStateVec = false # If true, include mean speed components per grid cell in the state vector.
     as.nmeas = 2*800 #2*800 # Number of randomly distributed meaurements 
-   
+    as.measVar = 1.0^2.0 # Squared measurement standard deviation
+    as.perturbMeasurements = false # True to perturb measurement matrix bin analysis step
+    as.localizationDist = 5.0 # Localization distance
+
     # Modify sim name according to run mode:
     simname = simnamePrefix*"_"
     if as.dryRun
@@ -88,8 +93,8 @@ function main(setDryrun, setResample)
 
     nstoretimes = round(Int, ntimes / storageInterval)
     storeCount = 0
-    storeXYE_twin = fill(0.0, 4, ms.nInd, nstoretimes)
-    storeXYE_e1 = fill(0.0, 4, ms.nInd, nstoretimes)
+    storeXYE_twin = fill(0.0, 5, ms.nInd, nstoretimes)
+    storeXYE_e1 = fill(0.0, 5, ms.nInd, nstoretimes)
     eFillval = 0.0
 
     println("dt=", dt, ", t_end=",t_end,", steps=",ntimes)
@@ -157,7 +162,7 @@ function main(setDryrun, setResample)
         if mod(tstep, as.assimInterval) == 0
             println("Assim at tstep=", tstep)
             
-            doPlot = tstep==15
+            doPlot = tstep==40
             updatedEnsemble, enkfField = ibmAssimilation(as, deepcopy(ensemble), xlim, ylim, dxy, doPlot)
             
             if !as.dryRun
@@ -176,6 +181,13 @@ function main(setDryrun, setResample)
                 storeXYE_twin[2,indI,storeCount] = ind.y
                 storeXYE_twin[3,indI,storeCount] = ind.E
                 storeXYE_twin[4,indI,storeCount] = ind.n
+                # Find grid cell to store local food concentration:
+                ix, iy = getGridCell(ind, xlim, ylim, dxy)
+                if ix>=1 && iy>=1 && ix<=size(X_fld,1) && iy<=size(X_fld,2)
+                    storeXYE_twin[5,indI,storeCount] = X_fld[ix, iy,Ndim]
+                else
+                    storeXYE_twin[5,indI,storeCount] = NaN
+                end
             end
             indsArray = ensemble[1]
             for indI = 1:ms.nInd
@@ -184,6 +196,13 @@ function main(setDryrun, setResample)
                 storeXYE_e1[2,indI,storeCount] = ind.y
                 storeXYE_e1[3,indI,storeCount] = ind.E
                 storeXYE_e1[4,indI,storeCount] = ind.n
+                # Find grid cell to store local food concentration:
+                ix, iy = getGridCell(ind, xlim, ylim, dxy)
+                if ix>=1 && iy>=1 && ix<=size(X_fld,1) && iy<=size(X_fld,2)
+                    storeXYE_e1[5,indI,storeCount] = X_fld[ix, iy,1]
+                else
+                    storeXYE_e1[5,indI,storeCount] = NaN
+                end
             end
 
             # Store density field for twin:
@@ -250,6 +269,7 @@ function main(setDryrun, setResample)
     writedlm(prefix*"twinY.csv", storeXYE_twin[2,:,:], ',')
     writedlm(prefix*"twinE.csv", storeXYE_twin[3,:,:], ',')
     writedlm(prefix*"twinN.csv", storeXYE_twin[4,:,:], ',')
+    writedlm(prefix*"twinFood.csv", storeXYE_twin[5,:,:], ',')
     writedlm(prefix*"twinDens.csv", storeDens_twin, ',')
     writedlm(prefix*"twinEnergy.csv", storeEnergy_twin, ',')
     writedlm(prefix*"twinU.csv", storeU_twin, ',')
@@ -262,6 +282,7 @@ function main(setDryrun, setResample)
     writedlm(prefix*"e1Y.csv", storeXYE_e1[2,:,:], ',')
     writedlm(prefix*"e1E.csv", storeXYE_e1[3,:,:], ',')
     writedlm(prefix*"e1N.csv", storeXYE_e1[4,:,:], ',')
+    writedlm(prefix*"e1Food.csv", storeXYE_e1[5,:,:], ',')
     writedlm(prefix*"eDens.csv", storeDens_e, ',')
     writedlm(prefix*"eEnergy.csv", storeEnergy_e, ',')
 end
