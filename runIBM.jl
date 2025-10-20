@@ -43,9 +43,9 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r18"
+    simnamePrefix = "r21"
     dt = 0.1 # Time step
-    t_end = 25.0 # Simulation end time
+    t_end = 100.1 # Simulation end time
     storageInterval = 2
     initFoodLevel = 1.0
     
@@ -64,7 +64,7 @@ function main(setDryrun, setResample)
     # Assimilation settings:
     as = AssimSettings()
     as.dryRun = setDryrun # If true, the assimilation process will be run but changes will not be applied.
-    as.N = 150# 100 # Number of ensemble members.
+    as.N = 75#150# 100 # Number of ensemble members.
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 20 # Time steps between each assimilation procedure
     as.speedsInStateVec = false # If true, include mean speed components per grid cell in the state vector.

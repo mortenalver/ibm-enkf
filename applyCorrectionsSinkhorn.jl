@@ -1,15 +1,21 @@
 
+# Function to calculate RMS for a vector of numbers
+function compute_rms(data)
+    @assert length(data) > 0 "Input array cannot be empty"
+    return sqrt(sum((data .- mean(data)).^2) / length(data))
+end
+
 function applyCorrectionsSinkhorn(indsArray, correctedField, origField, xlim, ylim, dxy, doWrite)
     #println("Start apply sinkhorn")
     # Subsample fields to reduce complexity of optimization problem:
-    subs = 2
+    subs = 1
     #println(subs)
     corr = zeros(Float64, convert(Int, ceil(size(origField,1)/subs)), convert(Int, ceil(size(origField,2)/subs)))
     orig = zeros(Float64, size(corr))
     for i=1:size(orig,1)
         for j=1:size(orig,2)
-            orig[i,j] = sum(origField[(subs*i-1):min(size(origField,1), subs*i), (subs*j-1):min(size(origField,2), subs*j)])
-            corr[i,j] = sum(correctedField[(subs*i-1):min(size(origField,1), subs*i), (subs*j-1):min(size(origField,2), subs*j)])
+            orig[i,j] = sum(origField[(subs*(i-1)+1):min(size(origField,1), subs*i), (subs*(j-1)+1):min(size(origField,2), subs*j)])
+            corr[i,j] = sum(correctedField[(subs*(i-1)+1):min(size(origField,1), subs*i), (subs*(j-1)+1):min(size(origField,2), subs*j)])
         end
     end
     #println(size(corr))
@@ -45,7 +51,7 @@ function applyCorrectionsSinkhorn(indsArray, correctedField, origField, xlim, yl
 
     
     # Call sinkhorn algotithm:
-    #t = sinkhorn(a, b, C, 0.95, maxiter=200000)#, alg=SinkhornGibbs())
+    #ot = sinkhorn(a, b, C, 0.95, maxiter=200000)#, alg=SinkhornGibbs())
     #ot = quadreg(a, b, C, 0.95, maxiter=2000)#, alg=SinkhornGibbs())
     #ot = sinkhorn(a, b, C, 5.00, maxiter=200000)#, alg=SinkhornGibbs())
     
@@ -53,17 +59,26 @@ function applyCorrectionsSinkhorn(indsArray, correctedField, origField, xlim, yl
     #     SinkhornStabilized(; absorb_tol=30_000_000); 
     #     maxiter=150000)
     
-    ot = sinkhorn(a, b, C, 3.0, 
+    eps = 1.9
+    ot = sinkhorn(a, b, C, eps, 
         SinkhornEpsilonScaling(
             SinkhornGibbs();
-            factor=0.65,#1//2,
-            steps=5,
+            factor=0.55,#1//2,  # 0.65: 595 sek
+            steps=2,
         );
+        atol=1e-8,
         maxiter=50_000)
 
-    #ot0 = copy(ot)
-    #optCost = sinkhorn2(a, b, C, 1.0, maxiter=200000, plan=ot)
-    #println("Diff OT: "*string(maximum((abs.(ot-ot0))[:])))
+    # Compute row sums to check against source distribution:
+    rSums = sum(ot,dims=2)
+    rowRMS = compute_rms(rSums-a)
+    #println("Row RMS: "*string(rowRMS))
+    cSums = sum(ot,dims=1)'
+    colRMS = compute_rms(cSums-b)
+    #println("Col RMS: "*string(colRMS))
+
+    optCost = sinkhorn2(a, b, C, 1.0, maxiter=200000, plan=ot)
+    #println("OptCost: "*string(optCost))
     #println("Diff plans: "*string(ot[1,1]-ot0[1,1]))
     if ~isnan(ot[1,1])
         # Go through each individual, find its cell and the transport distribution for that cell:
@@ -126,5 +141,5 @@ function applyCorrectionsSinkhorn(indsArray, correctedField, origField, xlim, yl
     end
 
 
-    return indsArray, updatedField
+    return indsArray, [optCost, rowRMS, colRMS], updatedField
 end

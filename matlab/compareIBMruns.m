@@ -3,7 +3,7 @@ direc = "C:/temp/";
 
 %runs = ["d_r9_resample_", "r9_", "r9_resample_"];
 %runs = ["d_r17_resample_", "r17_", "r17_resample_"];
-runs = ["d_r17_resample_", "r17_", "r18_"];
+runs = ["d_r20_resample_", "r20_", "r20_resample_"];
 runNames = ["Dry run", "Assim", "Assim resample"];
 
 dims_and_int = dlmread(direc+runs(1)+"fieldDims.csv");

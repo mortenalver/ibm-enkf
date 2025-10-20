@@ -1,6 +1,6 @@
 
-%prefix = 'C:/temp/r9_';
-prefix = 'C:/temp/r17_resample_';
+prefix = 'C:/temp/r19_';
+%prefix = 'C:/temp/r17_resample_';
 %prefix = 'C:/temp/d_r17_resample_';
 
 animate = 1;

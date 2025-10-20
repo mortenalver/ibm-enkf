@@ -65,6 +65,8 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
     #meanField2 = reshape(X_upd_mean, dimensions[1], dimensions[2])
 
+    X_upd = max.(0.0, X_upd)
+
     #A = densEnsemble - (1/N)*densEnsemble*ones(N,1)*ones(1,N)
     #stdA = std(A, dims=2)
     #display(plot(stdA))
@@ -102,6 +104,10 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
 
     else # Adjustment strategy
 
+        nanCount = 0
+        nValid = 0
+        totOptCost = 0.0
+
         for i=1:as.N
             println("i="*string(i))
             # Compute the deviation field for this member:
@@ -120,13 +126,21 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
             #if i==1
                 #println("Warning, calling only sinkhorn for ensemble member 1!!!")
 
-            updArray, origField = applyCorrectionsSinkhorn(copy(updArray), densityField, origField, xlim, ylim, dxy, doWrite)
+            updArray, stats, origField = applyCorrectionsSinkhorn(copy(updArray), densityField, origField, xlim, ylim, dxy, doWrite)
+            # if ~isnan(optCost)
+            #     nValid += 1
+            #     totOptCost += optCost
+            # else
+            #     nanCount += 1
+            # end
+            
             updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
             ensemble[i] = updArray
             #end
     
         end
         
+        #println("Mean optCost: "*string(totOptCost/nValid)*",  nan count="*string(nanCount))
     end
     
     # If activatd, apply corrections for speed:
