@@ -104,46 +104,40 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
 
     else # Adjustment strategy
 
-        nanCount = 0
-        nValid = 0
-        totOptCost = 0.0
+        # Call Sinkhorn OT algorithm for all ensemble members:
+        ot = applyCorrectionsSinkhornParallel(X_upd, densEnsemble, dimensions, dxy, true)
 
+        # Then apply results for each ensemble member:
         for i=1:as.N
-            println("i="*string(i))
+            #println("i="*string(i))
             # Compute the deviation field for this member:
             origField = reshape(densEnsemble[:,i], dimensions[1], dimensions[2])
             densityField = reshape(X_upd[:,i], dimensions[1], dimensions[2])
-            devi = densityField - origField
-
+            
             # Get the IBM for this ensemble member:
             indsArray = ensemble[i]
             updArray = indsArray
         
             doWrite = i==1
-
-            #updArray, origField = applyCorrectionsMoveDirectMultiple(copy(updArray), densityField, origField, xlim, ylim, dxy, maxpasses, doWrite)
-            #updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
-            #if i==1
-                #println("Warning, calling only sinkhorn for ensemble member 1!!!")
-
-            updArray, stats, origField = applyCorrectionsSinkhorn(copy(updArray), densityField, origField, xlim, ylim, dxy, doWrite)
-            # if ~isnan(optCost)
-            #     nValid += 1
-            #     totOptCost += optCost
-            # else
-            #     nanCount += 1
-            # end
             
+            # Apply Sinkhorn individually for ensemble members (slow!):
+            #updArray, stats, origField = applyCorrectionsSinkhorn(copy(updArray), densityField, origField, xlim, ylim, dxy, doWrite)
+            
+            # Move individuals according to transport plan:
+            #println("Updating member "*string(i)*" based on sinkhorn transport.")
+            updArray, origField = applyCorrectionsFromSinkhorn(copy(indsArray), ot[:,:,i], origField, dimensions, xlim, ylim, dxy, doWrite)
+            
+            # Make size adjustments to match target densities:
+            #println("Adjusting sizes")
             updArray, origField, updatedCells = applyCorrectionsResize(copy(updArray), densityField, origField, xlim, ylim, dxy, false)
             ensemble[i] = updArray
-            #end
-    
+            
+                            
         end
-        
-        #println("Mean optCost: "*string(totOptCost/nValid)*",  nan count="*string(nanCount))
+                
     end
     
-    # If activatd, apply corrections for speed:
+    # If activated, apply corrections for speed:
     if as.speedsInStateVec
 
         for ensI=1:as.N

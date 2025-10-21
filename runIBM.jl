@@ -27,6 +27,7 @@ include("measurementModel.jl")
 include("applyCorrectionsIBM.jl")
 include("applyCorrectionsResample.jl")
 include("applyCorrectionsSinkhorn.jl")
+include("applyCorrectionsSinkhornParallel.jl")
 include("ibmAssimilation.jl")
 
 function readCurrentField(filename)
@@ -43,7 +44,7 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r21"
+    simnamePrefix = "r23" 
     dt = 0.1 # Time step
     t_end = 100.1 # Simulation end time
     storageInterval = 2

@@ -1,4 +1,8 @@
 
+# Implementation of the basic Ensemble Kalman filter
+# Not used at present, as the ESTKF from the Julia
+# DataAssim.jl library is used instead.
+
 function enKF(X, M, xloc, d, Rval, as)
     N = size(X)[2]
     D = zeros(Float64, length(d), N)
