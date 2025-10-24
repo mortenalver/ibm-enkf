@@ -44,9 +44,9 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "r23" 
+    simnamePrefix = "nomigr7" 
     dt = 0.1 # Time step
-    t_end = 100.1 # Simulation end time
+    t_end = 101.1 # Simulation end time
     storageInterval = 2
     initFoodLevel = 1.0
     
@@ -56,6 +56,8 @@ function main(setDryrun, setResample)
     ms.indsInteraction = false # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
     ms.indsInteractionThresh = 0.22 # Distance threshold for individual interaction.
     ms.indsInteractionStrength = 0.1 # Strength of individual interaction
+    ms.pullTowardsCOG = true # If true, individuals will be pulled towards the center of gravity of the population
+    ms.pullTowardsCOGStrength = 0.5 # Strength of the pull towards COG if activated
     ms.speedUpdateRate = 0.6 # Multiplier for speed update - lower means more intertia in speed updates
     ms.nInd = 2000 #6000 # Number of individuals
     ms.nPerInd = 1.0 # individuals per super individual
@@ -65,13 +67,13 @@ function main(setDryrun, setResample)
     # Assimilation settings:
     as = AssimSettings()
     as.dryRun = setDryrun # If true, the assimilation process will be run but changes will not be applied.
-    as.N = 75#150# 100 # Number of ensemble members.
+    as.N = 150# 100 # Number of ensemble members.
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 20 # Time steps between each assimilation procedure
-    as.speedsInStateVec = false # If true, include mean speed components per grid cell in the state vector.
-    as.nmeas = 2*800 #2*800 # Number of randomly distributed meaurements 
+    as.speedsInStateVec = true # If true, include mean speed components per grid cell in the state vector.
+    as.nmeas = 1200 #2*800 # Number of randomly distributed meaurements 
     as.measVar = 1.0^2.0 # Squared measurement standard deviation
-    as.perturbMeasurements = false # True to perturb measurement matrix bin analysis step
+    # Not relevant when using ESTFK: as.perturbMeasurements = false # True to perturb measurement matrix bin analysis step
     as.localizationDist = 5.0 # Localization distance
 
     # Modify sim name according to run mode:
@@ -134,6 +136,9 @@ function main(setDryrun, setResample)
 
     # Initialize food field on same dimensions as the density field:
     X_fld = fill(initFoodLevel, size(densityField,1), size(densityField,2),Ndim)
+    # Let the twin's initial food field have a maximum:
+    X_twin_pert = getRandomField([size(X_fld,1) size(X_fld,2)], 0.4, 1, size(X_fld,1)/2)
+    X_fld[:,:,Ndim] += X_twin_pert
 
     # Initialize variable to hold the updated density field from the last
     # EnKF run (before application to the IBM)

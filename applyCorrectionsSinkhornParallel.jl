@@ -7,7 +7,8 @@ end
 
 function applyCorrectionsSinkhornParallel(correctedField, origField, dims, dxy, doWrite)
     println("Start apply sinkhorn")
-    
+    println(size(correctedField))
+    println(size(origField))
     a = origField#[:,1:10]
     b = copy(correctedField)#[:,1:10])
     for i=1:size(a,2)

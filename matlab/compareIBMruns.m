@@ -3,8 +3,9 @@ direc = "C:/temp/";
 
 %runs = ["d_r9_resample_", "r9_", "r9_resample_"];
 %runs = ["d_r17_resample_", "r17_", "r17_resample_"];
-%runs = ["d_r21_resample_", "r21_", "r21_resample_"];
-runs = ["d_r21_resample_", "r23_", "r21_resample_"];
+%runs = ["d_migr5_resample_", "migr5_", "migr5_resample_"];
+runs = ["d_nomigr7_resample_", "nomigr7_", "nomigr7_resample_"];
+%runs = ["d_r24_resample_", "r24_", "r24_resample_"];
 runNames = ["Dry run", "Assim", "Assim resample"];
 
 dims_and_int = dlmread(direc+runs(1)+"fieldDims.csv");
@@ -52,8 +53,9 @@ end
 figure, tiledlayout(2,3, "TileSpacing","compact");
 nexttile, plot(rmsDens), legend(runNames), title('Density RMS'), grid on
 hold on
-plot((assimInt:assimInt:size(rmsDens,1)), rmsEnkf(assimInt:assimInt:end,:),'--')
-legend([runNames runNames])
+legend([runNames])
+%plot((assimInt:assimInt:size(rmsDens,1)), rmsEnkf(assimInt:assimInt:end,:),'--')
+%legend([runNames runNames])
 nexttile, plot(rmsE), legend(runNames), title('Energy RMS'), grid on
 % Plot rmsEnkf only at assimilation times (comparison is only valid at
 % those times):

@@ -27,7 +27,7 @@ function getSpeedMult(X)
 
 end
 
-function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, ms)
+function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, cog, ms)
     
     # Get local feed concentration:
     # First find index in X field:
@@ -102,10 +102,21 @@ function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, ms)
         end
         # Then, add a tendency depending along the local X_fld gradient:
         if ix>1 && ix<size(X_fld,1)
-            tend_x += 1.0*(X_fld[ix+1,iy]-X_fld[ix-1,iy])
+            tend_x += 1.5*(X_fld[ix+1,iy]-X_fld[ix-1,iy])
         end
         if iy>1 && iy<size(X_fld,2)
-            tend_y += 1.0*(X_fld[ix,iy+1]-X_fld[ix,iy-1])
+            tend_y += 1.5*(X_fld[ix,iy+1]-X_fld[ix,iy-1])
+        end
+
+        # Then, if activated, add a tendency towards the center of the population:
+        if ms.pullTowardsCOG
+            vecToCOG = [cog[1]-ind.x cog[2]-ind.y]
+            # If we are not exactly at the COG, add a pull in that direction:
+            if maximum(vecToCOG) > 0
+                normVec = vecToCOG/(sqrt(vecToCOG[1]*vecToCOG[1] + vecToCOG[2]*vecToCOG[2]))
+                tend_x += ms.pullTowardsCOGStrength*normVec[1]
+                tend_y += ms.pullTowardsCOGStrength*normVec[2]
+            end
         end
 
         v_x_new = 1.5*tend_x + randn()
@@ -164,7 +175,7 @@ function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, ms)
     # Update energy level:
     f = X/(X + 0.5)
     ind.E = ind.E + dt*(f - 0.25*ind.E)
-    X_fld[ix, iy] = max(0.0, X_fld[ix, iy]-dt*0.01*f)
+    X_fld[ix, iy] = max(0.0, X_fld[ix, iy]-dt*0.015*f)
 
 end
 
@@ -182,15 +193,26 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
     end
     #end
 
+    # If necessary, compute the center of gravity:
+    cog = [0.0 0.0]
+    if ms.pullTowardsCOG
+        xsum = 0.0
+        ysum = 0.0
+        ncount = 0.0
+        for i in eachindex(indsArray)
+            ind = indsArray[i]
+            xsum += ind.n*ind.x
+            ysum += ind.n*ind.y
+            ncount += ind.n
+        end
+        cog[1] = xsum/ncount
+        cog[2] = ysum/ncount
+    end
+
     for i = 1:length(indsArray)
         ind = indsArray[i]
-        #xind = round(Int64, ind.x)
-        #yind = round(Int64, ind.y)
-        #println(i)
-        #if i==1
-        #    println(ufield[xind, yind])
-        #end
-        step(t, dt, ind, perturb, i, xall, yall, X_fld, xrng, yrng, ms)
+
+        step(t, dt, ind, perturb, i, xall, yall, X_fld, xrng, yrng, cog, ms)
         
     end
    
@@ -199,7 +221,7 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
     X_fld = X_fld + dt.*X_pert
 
     # Add food everywhere to a maximum of 2:
-    X_fld = X_fld + fill(dt*2.0*0.025, size(X_fld,1), size(X_fld,2))
+    X_fld = X_fld + fill(dt*0.5*0.025, size(X_fld,1), size(X_fld,2))
     X_fld = min.(X_fld, 2.0)
     return X_fld
 end

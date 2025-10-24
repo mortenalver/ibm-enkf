@@ -65,6 +65,9 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
     #meanField2 = reshape(X_upd_mean, dimensions[1], dimensions[2])
 
+    println("densEnsemble: "*string(size(densEnsemble)))
+    println("X_upd: "*string(size(X_upd)))
+
     X_upd = max.(0.0, X_upd)
 
     #A = densEnsemble - (1/N)*densEnsemble*ones(N,1)*ones(1,N)
@@ -105,14 +108,14 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     else # Adjustment strategy
 
         # Call Sinkhorn OT algorithm for all ensemble members:
-        ot = applyCorrectionsSinkhornParallel(X_upd, densEnsemble, dimensions, dxy, true)
+        ot = applyCorrectionsSinkhornParallel(X_upd[1:nPos,:], densEnsemble[1:nPos,:], dimensions, dxy, true)
 
         # Then apply results for each ensemble member:
         for i=1:as.N
             #println("i="*string(i))
             # Compute the deviation field for this member:
-            origField = reshape(densEnsemble[:,i], dimensions[1], dimensions[2])
-            densityField = reshape(X_upd[:,i], dimensions[1], dimensions[2])
+            origField = reshape(densEnsemble[1:nPos,i], dimensions[1], dimensions[2])
+            densityField = reshape(X_upd[1:nPos,i], dimensions[1], dimensions[2])
             
             # Get the IBM for this ensemble member:
             indsArray = ensemble[i]
