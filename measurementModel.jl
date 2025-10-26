@@ -14,6 +14,34 @@ function getM(dimensions, as)
    return M
 end
 
+function getMRegular(dims, dxy, as)
+   rngx = (1+trunc(Int, as.measSpacing/2)):as.measSpacing:trunc(Int, dims[1]-as.measSpacing/2)
+   rngy = (1+trunc(Int, as.measSpacing/2)):as.measSpacing:trunc(Int, dims[2]-as.measSpacing/2)
+   nmeas = length(rngx)*length(rngy)
+   npos = dims[1]*dims[2]
+   nPerPos = 1 
+   if as.speedsInStateVec
+      nPerPos = 3
+   end
+   M = zeros(Float64, nmeas, npos*nPerPos)
+   xmeas = zeros(Float64, nmeas)
+   ymeas = zeros(Float64, nmeas)
+   
+   lind = LinearIndices((dims[1], dims[2]))
+   idx = 0
+   for i=rngx
+      for j=rngy
+         idx += 1
+         state = lind[i,j]
+         #println("i="*string(i)*", j="*string(j)*", state="*string(state))
+         M[idx, state] = 1
+         xmeas[idx] = i*dxy
+         ymeas[idx] = j*dxy
+      end
+   end
+   return M, xmeas, ymeas
+end
+
 function getLocMatrix(dimensions, M, locDist)
 
    sM = size(M)

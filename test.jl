@@ -1,20 +1,22 @@
-println("Hello world")
 
-function f(x, y)
-    return x-y*y
-end
-x = 1
-y = 2
-println("x is $x and y is $y. f is $(f(x,y))")
-println("f(x,y) is ",f(x,y))
+Xf = randn(Float64, 5, 25)
+M = [1 0 0 0 0; 0 1 0 0 0]
+y = [0.5; 0.5]
+R = [1, 1]
+vv = Vector(1:convert(Float64, 5))
+selectObs(i) = Vector(ones(Float64, length(y)))
 
-A = [1 2 3; 4 3 5]
-B = [2 1; 2 1; 2 3]
-C = A*A'
-println(C)
-try
-    println(inv(C))
-    println(inv([0 1; 0 1]))
-catch e
-    println("Error: ", e)
-end
+println(selectObs(1))
+println(size(selectObs(1)))
+
+println(typeof(Xf))
+println(typeof(M))
+println(typeof(R))
+println(typeof(y))
+println(typeof(vv))
+println(typeof(selectObs(21)))
+
+X_upd, X_upd_mean = DataAssim.local_ESTKF(Xf, M, y, R, vv, selectObs)
+
+println(size(X_upd))
+    

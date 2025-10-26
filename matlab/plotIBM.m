@@ -1,6 +1,6 @@
 
-prefix = 'C:/temp/nomigr7_';
-%prefix = 'C:/temp/r17_resample_';
+%prefix = 'C:/temp/nomigr7_';
+prefix = 'C:/temp/d_nomigr7_resample_';
 %prefix = 'C:/temp/d_r17_resample_';
 
 animate = 1;
@@ -11,7 +11,7 @@ dims = dlmread([prefix 'fieldDims.csv']);
 % Read twin values:
 
 dt = 2*0.1;
-speedup = 2;
+speedup = 3;
 
 x_twin = dlmread([prefix 'twinX.csv']);
 y_twin = dlmread([prefix 'twinY.csv']);

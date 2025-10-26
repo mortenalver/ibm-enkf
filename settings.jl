@@ -23,10 +23,12 @@ mutable struct AssimSettings
     assimInterval::Int
     resampleAll::Bool
     speedsInStateVec::Bool
-    nmeas::Int 
+    nmeas::Int
+    regularMeasurements::Bool
+    measSpacing::Int
     measVar::Float64
     perturbMeasurements::Bool
     localizationDist::Float64
 
-    AssimSettings() = new(false,2,10,false,true,1000, 1.0,true,4.0)
+    AssimSettings() = new(false,2,10,false,true,1000,false,1,1.0,true,4.0)
 end

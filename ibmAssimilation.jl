@@ -18,8 +18,24 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     end
     densEnsemble = zeros(Float64,statesPerPos*nPos, as.N)
     densTwin = zeros(Float64, statesPerPos*nPos, 1)
-    #println("defined densEnsemble: ", size(densEnsemble))
 
+    # Set up x and y values per state for localization:
+    x_states = zeros(Float64, statesPerPos*nPos, 1)
+    y_states = zeros(Float64, statesPerPos*nPos, 1)
+    cind = CartesianIndices((length(xrng), length(yrng)))
+    for i=1:nPos
+        xi = cind[i][1]
+        yi = cind[i][2]
+        x_states[i] = dxy*xi
+        y_states[i] = dxy*yi
+        if as.speedsInStateVec
+            x_states[i+nPos] = dxy*xi
+            y_states[i+nPos] = dxy*yi
+            x_states[i+2*nPos] = dxy*xi
+            y_states[i+2*nPos] = dxy*yi                
+        end
+    end
+    
     for ensI = 1:Ndim
         indsArray = ensemble[ensI]
         densityField, xrng, yrng = computeDensityField(indsArray, xlim, ylim, dxy)
@@ -54,21 +70,54 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     println("Member 1 sum abs deviation: ", sum(abs.(densEnsemble[:,1]-densTwin)) )
 
     # Ensemble Kalman filter:
-    M = getM(dimensions, as) # Measurement model
+
+    
+    # Measurement model:
+    M = zeros(Float64,1,1)
+    xmeas = zeros(Float64,1,1)
+    ymeas = zeros(Float64,1,1)
+    if as.regularMeasurements
+        M, xmeas, ymeas = getMRegular(dimensions, dxy, as)
+    else
+        M = getM(dimensions, as) 
+    end
     xloc = getLocMatrix(dimensions, M, as.localizationDist)
     y = M*densTwin # Measurement vector based on twin
     Rval = as.measVar # Assumed measurement uncertainty
-    #X_upd = enKF(densEnsemble, M, xloc, y, Rval, as) # Get corrected ensemble matrix X_upd
-
+    
     Rvec = Rval*ones(Float64, size(M,1))
     R = Diagonal(Rvec)
-    X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
+    
+    #X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
+
+    #selectObs(i) = compact_locfun(sqrt.((x_states[i] .- xmeas).^2 .+ (y_states[i] .- ymeas).^2))#./as.localizationDist)
+    #selectObs(i) = Vector(ones(Float64, length(xmeas))) #exp.(-sqrt.((x_states[i] .- xmeas).^2 .+ (y_states[i] .- ymeas).^2)./as.localizationDist)
+
+    #vv = Vector(1:convert(Float64, size(densEnsemble,1)))
+
+    #println(size(densEnsemble))
+    #println(size(M))
+    #println(size(y))
+    #println(size(R))
+    #println(size(vv))
+    #println(size(M*densEnsemble))
+    #println(typeof(densEnsemble))
+    #println(typeof(M))
+    #println(typeof(Rvec))
+    #println(typeof(y))
+    #println(typeof(vv))
+    #println(typeof(selectObs(21)))
+    #testloc = selectObs(210)
+    #println(string(minimum(testloc))*"   "*string(maximum(testloc)))
+
+    #X_upd, X_upd_mean = DataAssim.local_ESTKF(densEnsemble, M, y, Rvec, vv, selectObs)
     #meanField2 = reshape(X_upd_mean, dimensions[1], dimensions[2])
+    X_upd = enKF(densEnsemble, M, xloc, y, Rval, as) # Get corrected ensemble matrix X_upd
+    
+    #println("densEnsemble: "*string(size(densEnsemble)))
+    #println("X_upd: "*string(size(X_upd)))
 
-    println("densEnsemble: "*string(size(densEnsemble)))
-    println("X_upd: "*string(size(X_upd)))
-
-    X_upd = max.(0.0, X_upd)
+    X_upd = max.(0.0, real(X_upd))
 
     #A = densEnsemble - (1/N)*densEnsemble*ones(N,1)*ones(1,N)
     #stdA = std(A, dims=2)

@@ -16,6 +16,21 @@ function getCorrelationMatrix(dimensions, X, k)
     return cx
 end
 
+function getNormalField(dims, intensity, dotPos, dotRng)
+    field = zeros(dims[1], dims[2])
+    
+    for i=1:dims[1]
+        for j=1:dims[2]
+            distVec = [i-dotPos[1] j-dotPos[2]]./dotRng
+            dist = sqrt(distVec[1]*distVec[1] + distVec[2]*distVec[2])
+            effect = exp(-(dist*dist))
+            field[i,j] = field[i,j] + intensity*effect
+        end
+    end
+
+    return field
+end
+
 
 function getRandomField(dims, intensity, ndots, dotRng)
     field = zeros(dims[1], dims[2])

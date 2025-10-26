@@ -111,9 +111,10 @@ function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, cog, ms)
         # Then, if activated, add a tendency towards the center of the population:
         if ms.pullTowardsCOG
             vecToCOG = [cog[1]-ind.x cog[2]-ind.y]
+            lVec = sqrt(vecToCOG[1]*vecToCOG[1] + vecToCOG[2]*vecToCOG[2])
             # If we are not exactly at the COG, add a pull in that direction:
-            if maximum(vecToCOG) > 0
-                normVec = vecToCOG/(sqrt(vecToCOG[1]*vecToCOG[1] + vecToCOG[2]*vecToCOG[2]))
+            if maximum(lVec) > 9
+                normVec = vecToCOG/lVec
                 tend_x += ms.pullTowardsCOGStrength*normVec[1]
                 tend_y += ms.pullTowardsCOGStrength*normVec[2]
             end

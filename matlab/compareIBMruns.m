@@ -4,9 +4,10 @@ direc = "C:/temp/";
 %runs = ["d_r9_resample_", "r9_", "r9_resample_"];
 %runs = ["d_r17_resample_", "r17_", "r17_resample_"];
 %runs = ["d_migr5_resample_", "migr5_", "migr5_resample_"];
-runs = ["d_nomigr7_resample_", "nomigr7_", "nomigr7_resample_"];
-%runs = ["d_r24_resample_", "r24_", "r24_resample_"];
+runs = ["d_nomigr9_resample_", "nomigr9_", "nomigr9_resample_"];
 runNames = ["Dry run", "Assim", "Assim resample"];
+%runs = ["d_nomigr7_resample_", "nomigr7_resample_"];
+%runNames = ["Dry run", "Assim resample"];
 
 dims_and_int = dlmread(direc+runs(1)+"fieldDims.csv");
 dims = dims_and_int(1:2);
