@@ -44,9 +44,9 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "nomigr10" 
+    simnamePrefix = "nomigr12" 
     dt = 0.1 # Time step
-    t_end = 60.1 # Simulation end time
+    t_end = 50.1 # Simulation end time
     storageInterval = 2
     initFoodLevel = 1.0
     
@@ -72,7 +72,7 @@ function main(setDryrun, setResample)
     as.assimInterval = 20 # Time steps between each assimilation procedure
     as.speedsInStateVec = true # If true, include mean speed components per grid cell in the state vector.
     as.regularMeasurements = true # If true, place measurements regularly at a given measSpacing
-    as.measSpacing = 2 # If regular measurements, sets the measurement spacing
+    as.measSpacing = 3 # If regular measurements, sets the measurement spacing
     as.nmeas = 1200 #2*800 # Number of randomly distributed meaurements 
     as.measVar = 1.0^2.0 # Squared measurement standard deviation
     # Not relevant when using ESTFK: as.perturbMeasurements = false # True to perturb measurement matrix bin analysis step
