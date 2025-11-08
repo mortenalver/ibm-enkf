@@ -1,7 +1,7 @@
 
-%prefix = 'C:/temp/nomigr7_';
-prefix = 'C:/temp/d_nomigr7_resample_';
-%prefix = 'C:/temp/d_r17_resample_';
+prefix = 'C:/temp/test9_resample_';
+%prefix = 'C:/temp/nomigr11_resample_';
+%prefix = 'C:/temp/d_nomigr_long1_resample_';
 
 animate = 1;
 plotInd = 25;
@@ -32,7 +32,10 @@ E_1 = dlmread([prefix 'e1E.csv']);
 N_1 = dlmread([prefix 'e1N.csv']);
 food_1 = dlmread([prefix 'e1Food.csv']);
 dens_e = dlmread([prefix 'eDens.csv']);
+densStd_e = dlmread([prefix 'eDensStd.csv']);
 energy_e = dlmread([prefix 'eEnergy.csv']);
+Xfld_e = dlmread([prefix 'eXfld.csv']);
+
 
 %%
 
@@ -42,7 +45,7 @@ v.FrameRate = 8; % Default 30
 open(v);
 
 figure('Renderer', 'painters', 'Position', [10 50 1400 800])
-ncol = 3;
+ncol = 4;
 tiledlayout(2,ncol)
 
 if animate > 0
@@ -73,7 +76,13 @@ for i=range
     clim([0 3])
     title('Individuals (ensemble member 1)')
     
-    nexttile(ncol+3)
+    nexttile(4)
+    dFieldT = reshape(Xfld_e(:,i), dims(1), dims(2));
+    pcolor(dFieldT'), shading flat, colorbar
+    clim([0 2])
+    title('Food field (ensemble)')
+
+    nexttile(ncol+4)
     dFieldT = reshape(Xfld_twin(:,i), dims(1), dims(2));
     pcolor(dFieldT'), shading flat, colorbar
     clim([0 2])
@@ -90,6 +99,12 @@ for i=range
     pcolor(dFieldE'), shading flat, colorbar
     clim([0 50])
     title('Density field (ensemble)')
+
+    nexttile(ncol+3)
+    dFieldE = reshape(densStd_e(:,i), dims(1), dims(2));
+    pcolor(dFieldE'), shading flat, colorbar
+    clim([0 5])
+    title('Stddev density (ensemble)')
 
     nexttile(3)
     diffField = dFieldT-dFieldE;

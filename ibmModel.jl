@@ -27,7 +27,7 @@ function getSpeedMult(X)
 
 end
 
-function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, cog, ms)
+function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng, cog, ms)
     
     # Get local feed concentration:
     # First find index in X field:
@@ -131,7 +131,7 @@ function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, cog, ms)
         # Distance from perturbation central point:
         pertVec = [perturb[i,3]-ind.x perturb[i,4]-ind.y]
         pertDist = sqrt(pertVec[1]*pertVec[1]+ pertVec[2]*pertVec[2])
-        pertDist = pertDist / 5.0
+        pertDist = pertDist / 10.0 #5.0
         distFactor = exp(-(pertDist*pertDist))
         pertX = pertX + perturb[i,1]*distFactor
         pertY = pertY + perturb[i,2]*distFactor
@@ -158,11 +158,18 @@ function step(t, dt, ind, perturb, idx, xall, yall, X_fld, xrng, yrng, cog, ms)
                 dist = sqrt(xdist[i]*xdist[i] + ydist[i]*ydist[i])
                 if dist < ms.indsInteractionThresh
                     # Add a little to x and y speeds to move away from the close individual:
-                    abxfac = abs((0.5*ms.indsInteractionThresh)/xdist[i])
-                    abyfac = abs((0.5*ms.indsInteractionThresh)/ydist[i])
+                    # abxfac = abs((0.5*ms.indsInteractionThresh)/xdist[i])
+                    # abyfac = abs((0.5*ms.indsInteractionThresh)/ydist[i])
+                    # dxInt = dxInt + ms.indsInteractionStrength*sign(ind.x - xall[i])*min(1.0, abxfac)
+                    #dyInt = dyInt + ms.indsInteractionStrength*sign(ind.y - yall[i])*min(1.0, abyfac)
                     
-                    dxInt = dxInt + ms.indsInteractionStrength*sign(ind.x - xall[i])*min(1.0, abxfac)
-                    dyInt = dyInt + ms.indsInteractionStrength*sign(ind.y - yall[i])*min(1.0, abyfac)
+                    # Add a little to x and y speeds to align speed with the close individual:
+                    relDist = dist/ms.indsInteractionThresh
+                    nearInd = indsArray[i]
+                    dxInt += ms.indsInteractionStrength*(1.0-relDist)*(nearInd.v_x - ind.v_x)
+                    dyInt += ms.indsInteractionStrength*(1.0-relDist)*(nearInd.v_y - ind.v_y)
+                    
+
                 end
             end
         end
@@ -213,16 +220,17 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
     for i = 1:length(indsArray)
         ind = indsArray[i]
 
-        step(t, dt, ind, perturb, i, xall, yall, X_fld, xrng, yrng, cog, ms)
+        step(t, dt, ind, indsArray, perturb, i, xall, yall, X_fld, xrng, yrng, cog, ms)
         
     end
    
     # Perturb feed concentration field:
-    X_pert = getRandomField([size(X_fld,1) size(X_fld,2)], 0.2, 25, 6)
+    X_pert = getRandomField([size(X_fld,1) size(X_fld,2)], 0.4, 25, 6, 0.0)
     X_fld = X_fld + dt.*X_pert
 
     # Add food everywhere to a maximum of 2:
-    X_fld = X_fld + fill(dt*0.5*0.025, size(X_fld,1), size(X_fld,2))
-    X_fld = min.(X_fld, 2.0)
+    #X_fld = X_fld + fill(dt*0.5*0.025, size(X_fld,1), size(X_fld,2))
+    #X_fld = X_fld + fill(dt*0.1*0.025, size(X_fld,1), size(X_fld,2))
+    #X_fld = min.(X_fld, 2.0)
     return X_fld
 end

@@ -32,11 +32,11 @@ function getNormalField(dims, intensity, dotPos, dotRng)
 end
 
 
-function getRandomField(dims, intensity, ndots, dotRng)
+function getRandomField(dims, intensity, ndots, dotRng, bias)
     field = zeros(dims[1], dims[2])
     dots = zeros(ndots, 3)
     for i=1:ndots
-        dots[i,:] = [1.0*dims[1]*rand() 1.0*dims[2]*rand() randn()]
+        dots[i,:] = [1.0*dims[1]*rand() 1.0*dims[2]*rand() randn()+bias]
     end
     
     for i=1:dims[1]

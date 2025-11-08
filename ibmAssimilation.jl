@@ -1,5 +1,5 @@
 
-function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
+function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
     # Handle the assimilation process from derivation of state values
     # via calling the Ensemble Kalman filter to updating the IBM.
 
@@ -13,11 +13,22 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     dimensions = [length(xrng), length(yrng)]
     nPos = length(xrng)*length(yrng)
     statesPerPos = 1
+    stateOffsetSpeed = 1
+    stateOffsetFood = -1
     if as.speedsInStateVec
-        statesPerPos = 3
+        stateOffsetSpeed = statesPerPos
+        statesPerPos += 2
     end
+    if as.foodInStateVec
+        stateOffsetFood = statesPerPos
+        statesPerPos += 1
+    end
+    println("statesPerPos: "*string(statesPerPos))
+    
     densEnsemble = zeros(Float64,statesPerPos*nPos, as.N)
     densTwin = zeros(Float64, statesPerPos*nPos, 1)
+
+    println("size densTwin: "*string(size(densTwin)))
 
     # Set up x and y values per state for localization:
     x_states = zeros(Float64, statesPerPos*nPos, 1)
@@ -55,15 +66,27 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
                 writedlm("C:/temp/Vbefore.csv", tmpV, ',')
             end
 
-
             if ensI <= as.N
-                densEnsemble[nPos+1:2*nPos,ensI] = reshape(tmpU, length(densityField), 1)
-                densEnsemble[2*nPos+1:3*nPos,ensI] = reshape(tmpV, length(densityField), 1)
+                densEnsemble[stateOffsetSpeed*nPos+1:(stateOffsetSpeed+1)*nPos,ensI] = reshape(tmpU, length(densityField), 1)
+                densEnsemble[(stateOffsetSpeed+1)*nPos+1:(stateOffsetSpeed+2)*nPos,ensI] = reshape(tmpV, length(densityField), 1)
             else
-                densTwin[nPos+1:2*nPos] = reshape(tmpU, length(densityField), 1)
-                densTwin[2*nPos+1:3*nPos] = reshape(tmpV, length(densityField), 1)
+                densTwin[stateOffsetSpeed*nPos+1:(stateOffsetSpeed+1)*nPos] = reshape(tmpU, length(densityField), 1)
+                densTwin[(stateOffsetSpeed+1)*nPos+1:(stateOffsetSpeed+2)*nPos] = reshape(tmpV, length(densityField), 1)
             end
+        end
 
+        if as.foodInStateVec && doPlot && ensI==1
+            # Store ens member 1 food before:
+            writedlm("C:/temp/Xbefore.csv", X_fld[:,:,1], ',')
+        end
+
+        # Add food to state vector if we are supposed to:
+        if as.foodInStateVec
+            if ensI <= as.N
+                densEnsemble[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos,ensI] = reshape(X_fld[:,:,ensI], length(densityField), 1)
+            else
+                densTwin[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos] = reshape(X_fld[:,:,ensI], length(densityField), 1)
+            end
         end
     end    
 
@@ -77,17 +100,23 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
     xmeas = zeros(Float64,1,1)
     ymeas = zeros(Float64,1,1)
     if as.regularMeasurements
-        M, xmeas, ymeas = getMRegular(dimensions, dxy, as)
+        M, xmeas, ymeas = getMRegular(dimensions, dxy, as, statesPerPos)
     else
-        M = getM(dimensions, as) 
+        M = getM(dimensions, as, statesPerPos) 
     end
     xloc = getLocMatrix(dimensions, M, as.localizationDist)
+
+    writedlm("C:/temp/Xloc.csv", xloc, ',')
+    writedlm("C:/temp/M.csv", M, ',')
+
     y = M*densTwin # Measurement vector based on twin
     Rval = as.measVar # Assumed measurement uncertainty
     
     Rvec = Rval*ones(Float64, size(M,1))
     R = Diagonal(Rvec)
     
+
+
     #X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
 
     #selectObs(i) = compact_locfun(sqrt.((x_states[i] .- xmeas).^2 .+ (y_states[i] .- ymeas).^2))#./as.localizationDist)
@@ -194,8 +223,8 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
 
         for ensI=1:as.N
             # Get corrected speed field for this ensemble member:
-            fieldU = reshape(X_upd[nPos+1:2*nPos,ensI], dimensions[1], dimensions[2])
-            fieldV = reshape(X_upd[2*nPos+1:3*nPos,ensI], dimensions[1], dimensions[2])
+            fieldU = reshape(X_upd[stateOffsetSpeed*nPos+1:(stateOffsetSpeed+1)*nPos,ensI], dimensions[1], dimensions[2])
+            fieldV = reshape(X_upd[(stateOffsetSpeed+1)*nPos+1:(stateOffsetSpeed+2)*nPos,ensI], dimensions[1], dimensions[2])
 
             # Iterate over all individuals, find cell and correct speed:
             indsArray = ensemble[ensI]
@@ -211,6 +240,12 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
 
     end
 
+    # If activated, apply corrections for the food field:
+    if as.foodInStateVec
+        for ensI=1:as.N
+            X_fld[:,:,ensI] = reshape(X_upd[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos,ensI], dimensions[1], dimensions[2])
+        end
+    end
 
     if doPlot
         updDensEnsemble = zeros(Float64,length(xrng)*length(yrng), as.N)
@@ -221,7 +256,7 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
         end    
         updFieldPost = reshape(mean(updDensEnsemble, dims=2), dimensions[1], dimensions[2])
 
-        ind = getStateIndex(dimensions,20, 20)
+        ind = getStateIndex(dimensions,15, 20)
         covMat = getCorrelationMatrix(dimensions, densEnsemble, ind)
 
         
@@ -240,8 +275,13 @@ function ibmAssimilation(as, ensemble, xlim, ylim, dxy, doPlot)
             writedlm("C:/temp/Uafter.csv", tmpU, ',')
             writedlm("C:/temp/Vafter.csv", tmpV, ',')
         end
+
+        if as.foodInStateVec
+            # Store ens member 1 food after:
+            writedlm("C:/temp/Xafter.csv", X_fld[:,:,1], ',')
+        end
     end
     
     # Return the updated ensemble and the corrected density field straight from the EnKF:
-    return ensemble, updFieldPre
+    return ensemble, X_fld, updFieldPre
 end

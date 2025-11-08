@@ -39,27 +39,55 @@ function readCurrentField(filename)
     return uval, vval
 end
 
+function dryrun()
+    main(true, true)
+end
+
+function normrun()
+    main(false, false)
+end
+
+function resamplerun()
+    main(false, true)
+end
+
+function allrun()
+    dryrun()
+    resamplerun()
+    normrun()
+end
+
 
 
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "nomigr12" 
+    simnamePrefix = "test5000" 
+    useRecordedTwin = true
+    recordedTwinPrefix = "C:/temp/d_gtwin5000_resample_"
     dt = 0.1 # Time step
     t_end = 50.1 # Simulation end time
     storageInterval = 2
+
+    recordingTwin = false # True to record new twin:
+    if recordingTwin
+        useRecordedTwin = false
+        storageInterval = 1
+        simnamePrefix = "gtwin5000"
+    end
+    plotTimeStep = 40
     initFoodLevel = 1.0
     
     # Simulation parameters:
     ms = ModelSettings()
     ms.migration = false # If true, periodic migration through the four corners of the domain. If false, migration controlled by food field and random movement.
     ms.indsInteraction = false # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
-    ms.indsInteractionThresh = 0.22 # Distance threshold for individual interaction.
-    ms.indsInteractionStrength = 0.1 # Strength of individual interaction
+    ms.indsInteractionThresh = 5.0 # Distance threshold for individual interaction.
+    ms.indsInteractionStrength = 0.005 # Strength of individual interaction
     ms.pullTowardsCOG = true # If true, individuals will be pulled towards the center of gravity of the population
     ms.pullTowardsCOGStrength = 0.25 # Strength of the pull towards COG if activated
     ms.speedUpdateRate = 0.6 # Multiplier for speed update - lower means more intertia in speed updates
-    ms.nInd = 2000 #6000 # Number of individuals
+    ms.nInd = 5000 #6000 # Number of individuals
     ms.nPerInd = 1.0 # individuals per super individual
     ms.minNormSpeed = 0.5 # In migration mode, determines minimum typical speed of individuals.
     ms.scopeNormSpeed = 1.8 # In migration mode, determines scope of the typical speed of individuals.
@@ -71,10 +99,12 @@ function main(setDryrun, setResample)
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 20 # Time steps between each assimilation procedure
     as.speedsInStateVec = true # If true, include mean speed components per grid cell in the state vector.
+    as.foodInStateVec = true # If true, include food field in the state vector
+    as.measureFood = true # If true, include measurements of food
     as.regularMeasurements = true # If true, place measurements regularly at a given measSpacing
-    as.measSpacing = 3 # If regular measurements, sets the measurement spacing
+    as.measSpacing = 2 # If regular measurements, sets the measurement spacing
     as.nmeas = 1200 #2*800 # Number of randomly distributed meaurements 
-    as.measVar = 1.0^2.0 # Squared measurement standard deviation
+    as.measVar = 0.5^2.0 # Squared measurement standard deviation
     # Not relevant when using ESTFK: as.perturbMeasurements = false # True to perturb measurement matrix bin analysis step
     as.localizationDist = 5.0 # Localization distance
 
@@ -98,7 +128,7 @@ function main(setDryrun, setResample)
 
     nstoretimes = round(Int, ntimes / storageInterval)
     storeCount = 0
-    storeXYE_twin = fill(0.0, 5, ms.nInd, nstoretimes)
+    storeXYE_twin = fill(0.0, 7, ms.nInd, nstoretimes)
     storeXYE_e1 = fill(0.0, 5, ms.nInd, nstoretimes)
     eFillval = 0.0
 
@@ -107,21 +137,51 @@ function main(setDryrun, setResample)
     # Ensemble setup:
     Ndim = as.N + 1
 
+    # If we are to use a recorded twin, load it now:
+    rTwinX = []
+    rTwinY = []
+    rTwinU = []
+    rTwinV = []
+    rTwinE = []
+    rTwinN = []
+
+    if useRecordedTwin
+        rTwinX = readdlm(recordedTwinPrefix*"twinX.csv", ',')
+        rTwinY = readdlm(recordedTwinPrefix*"twinY.csv", ',')
+        rTwinVX = readdlm(recordedTwinPrefix*"twinVX.csv", ',')
+        rTwinVY = readdlm(recordedTwinPrefix*"twinVY.csv", ',')
+        rTwinE = readdlm(recordedTwinPrefix*"twinE.csv", ',')
+        rTwinN = readdlm(recordedTwinPrefix*"twinN.csv", ',')
+        rTwinXfld = readdlm(recordedTwinPrefix*"twinXfld.csv", ',')
+    end
+
+
     # Initialize ensemble:
     ensemble = Array{Array{Individual,1},1}(undef, Ndim)
     for ensI = 1:Ndim
         ensemble[ensI] = Array{Individual, 1}(undef, ms.nInd)
     
-        for i = 1:ms.nInd
-            normspeed = ms.minNormSpeed+ms.scopeNormSpeed*rand(Float64)
-            # Modify speed for twin to create an offset (only affects simulation with migration activated):
-            if ensI != Ndim
-                normspeed = 1.25*normspeed # Non-twin is 25% faster
-            end
+        if ensI < Ndim || !useRecordedTwin         
+            for i = 1:ms.nInd
+                normspeed = ms.minNormSpeed+ms.scopeNormSpeed*rand(Float64)
+                # Modify speed for twin to create an offset (only affects simulation with migration activated):
+                if ensI != Ndim
+                    normspeed = 1.25*normspeed # Non-twin is 25% faster
+                end
 
-            indX = 3.1 + 2*randn(Float64)
-            indY = 9.1 + 2*randn(Float64)
-            ensemble[ensI][i] = createIndividual(indX, indY, normspeed, ms.nPerInd)
+                indX = 3.1 + 2*randn(Float64)
+                indY = 9.1 + 2*randn(Float64)
+                ensemble[ensI][i] = createIndividual(indX, indY, normspeed, ms.nPerInd)
+            end
+        else
+            # This is the twin and we should initialize from pre-recorded data:
+            for i = 1:ms.nInd
+                # Random normspeed. This should ideally also have been recorded, but shouldn't matter
+                # since we are overriding positions and speeds. normspeed is also only used with migration.
+                normspeed = ms.minNormSpeed+ms.scopeNormSpeed*rand(Float64)
+                ensemble[ensI][i] = Individual(rTwinX[i,1], rTwinY[i,1], rTwinVX[i,1], rTwinVY[i,1], 
+                    0.0, normspeed, rTwinN[i,1], 0.0, 0.0, -1)
+            end
         end
     end
 
@@ -135,7 +195,9 @@ function main(setDryrun, setResample)
     storeDens_e = fill(0.0, length(densityField), nstoretimes)
     storeEnergy_e = fill(0.0, length(densityField), nstoretimes)
     storeEnKF_field = fill(0.0, length(densityField), nstoretimes)
-
+    storeStd_field = fill(0.0, length(densityField), nstoretimes)
+    storeX_e = fill(0.0, length(densityField), nstoretimes)
+    
     # Initialize food field on same dimensions as the density field:
     X_fld = fill(initFoodLevel, size(densityField,1), size(densityField,2),Ndim)
     # Let the twin's initial food field have a maximum:
@@ -156,26 +218,43 @@ function main(setDryrun, setResample)
         # Time step of IBM:
         for ensI = 1:Ndim
 
-            # Roll random numbers used to perturb individuals' speeds:
-            perturb = zeros(Float64, 20, 4)
-            for ptI = 1:size(perturb,1)
-                perturb[ptI,:] = [1.0*randn(Float64), 1.0*randn(Float64),
-                    xlim[1]+rand(Float64)*(xlim[2]-xlim[1]), ylim[1]+rand(Float64)*(ylim[2]-ylim[1])]
+            if ensI < Ndim || !useRecordedTwin
+                # Roll random numbers used to perturb individuals' speeds:
+                perturb = zeros(Float64, 12, 4)
+                for ptI = 1:size(perturb,1)
+                    perturb[ptI,:] = [1.0*randn(Float64), 1.0*randn(Float64),
+                        xlim[1]+rand(Float64)*(xlim[2]-xlim[1]), ylim[1]+rand(Float64)*(ylim[2]-ylim[1])]
+                end
+                
+                indsArray = ensemble[ensI]
+                X_fld_upd = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
+                X_fld[:,:,ensI] = X_fld_upd
+            else
+                # This is the twin and we are using pre-recorded data:
+                indsArray = ensemble[ensI] 
+                for i = 1:length(indsArray)
+                    ind = indsArray[i]
+                    ind.x = rTwinX[i,tstep]
+                    ind.y = rTwinY[i,tstep]
+                    ind.v_x = rTwinVX[i,tstep]
+                    ind.v_y = rTwinVY[i,tstep]
+                    ind.n = rTwinN[i,tstep]
+                    ind.E = rTwinE[i,tstep]
+                end
+                #X_fld_upd = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
+                X_fld[:,:,ensI] = reshape(rTwinXfld[:,tstep], size(X_fld,1), size(X_fld,2))
             end
-            
-            indsArray = ensemble[ensI]
-            X_fld_upd = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
-            X_fld[:,:,ensI] = X_fld_upd
         end
 
         if mod(tstep, as.assimInterval) == 0
             println("Assim at tstep=", tstep)
             
-            doPlot = tstep==20
-            updatedEnsemble, enkfField = ibmAssimilation(as, deepcopy(ensemble), xlim, ylim, dxy, doPlot)
+            doPlot = tstep==plotTimeStep
+            updatedEnsemble, X_fld_upd, enkfField = ibmAssimilation(as, deepcopy(ensemble), copy(X_fld), xlim, ylim, dxy, doPlot)
             
             if !as.dryRun
                 ensemble = updatedEnsemble
+                X_fld = X_fld_upd
             end
         end
 
@@ -197,6 +276,8 @@ function main(setDryrun, setResample)
                 else
                     storeXYE_twin[5,indI,storeCount] = NaN
                 end
+                storeXYE_twin[6,indI,storeCount] = ind.v_x
+                storeXYE_twin[7,indI,storeCount] = ind.v_y
             end
             indsArray = ensemble[1]
             for indI = 1:ms.nInd
@@ -228,7 +309,8 @@ function main(setDryrun, setResample)
 
             # Store X field for twin:
             storeX_twin[:,storeCount] = reshape(X_fld[:,:,Ndim], length(densityField), 1)
-
+            # Store mean X field for ensemble:
+            storeX_e[:,storeCount] = reshape(mean(X_fld[:,:,1:as.N],dims=3), length(densityField), 1)
 
             # Store mean ensemble density field:
             densEnsemble = zeros(Float64,length(xrng)*length(yrng), as.N)
@@ -242,6 +324,7 @@ function main(setDryrun, setResample)
                 energyEnsemble[:,ensI] = reshape(energyField, length(densityField), 1)
             end    
             storeDens_e[:,storeCount] = mean(densEnsemble, dims=2)
+            storeStd_field[:,storeCount] = std(densEnsemble, dims=2)
             storeEnergy_e[:,storeCount] = mean(energyEnsemble, dims=2)
 
             #densityField, xrng, yrng = computeDensityField(ensemble[1], xlim, ylim, dxy)
@@ -276,6 +359,8 @@ function main(setDryrun, setResample)
     # Store twin states to files:
     writedlm(prefix*"twinX.csv", storeXYE_twin[1,:,:], ',')
     writedlm(prefix*"twinY.csv", storeXYE_twin[2,:,:], ',')
+    writedlm(prefix*"twinVX.csv", storeXYE_twin[6,:,:], ',')
+    writedlm(prefix*"twinVY.csv", storeXYE_twin[7,:,:], ',')
     writedlm(prefix*"twinE.csv", storeXYE_twin[3,:,:], ',')
     writedlm(prefix*"twinN.csv", storeXYE_twin[4,:,:], ',')
     writedlm(prefix*"twinFood.csv", storeXYE_twin[5,:,:], ',')
@@ -293,7 +378,10 @@ function main(setDryrun, setResample)
     writedlm(prefix*"e1N.csv", storeXYE_e1[4,:,:], ',')
     writedlm(prefix*"e1Food.csv", storeXYE_e1[5,:,:], ',')
     writedlm(prefix*"eDens.csv", storeDens_e, ',')
+    writedlm(prefix*"eDensStd.csv", storeStd_field, ',')
     writedlm(prefix*"eEnergy.csv", storeEnergy_e, ',')
+    writedlm(prefix*"eXfld.csv", storeX_e, ',')
+    
 end
 
 

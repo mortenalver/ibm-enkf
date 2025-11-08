@@ -23,6 +23,8 @@ mutable struct AssimSettings
     assimInterval::Int
     resampleAll::Bool
     speedsInStateVec::Bool
+    foodInStateVec::Bool
+    measureFood::Bool
     nmeas::Int
     regularMeasurements::Bool
     measSpacing::Int
@@ -30,5 +32,5 @@ mutable struct AssimSettings
     perturbMeasurements::Bool
     localizationDist::Float64
 
-    AssimSettings() = new(false,2,10,false,true,1000,false,1,1.0,true,4.0)
+    AssimSettings() = new(false,2,10,false,true,false,false,1000,false,1,1.0,false,4.0)
 end

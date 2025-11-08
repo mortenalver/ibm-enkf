@@ -39,16 +39,16 @@ function applyCorrectionsSinkhornParallel(correctedField, origField, dims, dxy, 
 
     aa = copy(a)
     println(size(aa))
-    # Call sinkhorn algotithm:
-    eps = 1.9
+    # Call sinkhorn algorithm:
+    eps = 1.2 # 2.0
     ot = sinkhorn(aa, b, C, eps, 
         SinkhornEpsilonScaling(
             SinkhornGibbs();
-            factor=0.55,#1//2,  # 0.65: 595 sek
+            factor=0.55,#0.55,#1//2,  # 0.65: 595 sek
             steps=2,
         );
-        atol=1e-6,
-        maxiter=50_000)
+        atol=2e-2,#1e-2,#1e-6,
+        maxiter=2_000) #50_000)
 
     # println(size(ot))
     # for i=1:size(ot,3)

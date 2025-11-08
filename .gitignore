@@ -1,3 +1,6 @@
-a.csv
+*.png
+*.eps
+*.asv
+*.csv
 matlab/anim.avi
 matlab/compareIBMruns.asv
