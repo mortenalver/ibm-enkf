@@ -69,7 +69,7 @@ function main(setDryrun, setResample)
     t_end = 60.1 # Simulation end time
     storageInterval = 2
 
-    recordingTwin = true # True to record new twin:
+    recordingTwin = false # True to record new twin:
     if recordingTwin
         useRecordedTwin = false
         storageInterval = 1
@@ -80,7 +80,6 @@ function main(setDryrun, setResample)
     
     # Simulation parameters:
     ms = ModelSettings()
-    ms.migration = false # If true, periodic migration through the four corners of the domain. If false, migration controlled by food field and random movement.
     ms.indsInteraction = true # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
     ms.indsInteractionThresh = 0.2 # Distance threshold for individual interaction.
     ms.indsAlignStrength = 0.003 # Strength of individual interaction
@@ -90,13 +89,11 @@ function main(setDryrun, setResample)
     ms.speedUpdateRate = 0.6 # Multiplier for speed update - lower means more intertia in speed updates
     ms.nInd = 5000 #6000 # Number of individuals
     ms.nPerInd = 1.0 # individuals per super individual
-    ms.minNormSpeed = 0.5 # In migration mode, determines minimum typical speed of individuals.
-    ms.scopeNormSpeed = 1.8 # In migration mode, determines scope of the typical speed of individuals.
-
+    
     # Assimilation settings:
     as = AssimSettings()
     as.dryRun = setDryrun # If true, the assimilation process will be run but changes will not be applied.
-    as.N = 15#0# 100 # Number of ensemble members.
+    as.N = 150# 100 # Number of ensemble members.
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 20 # Time steps between each assimilation procedure
     as.speedsInStateVec = true # If true, include mean speed components per grid cell in the state vector.
@@ -164,24 +161,16 @@ function main(setDryrun, setResample)
     
         if ensI < Ndim || !useRecordedTwin         
             for i = 1:ms.nInd
-                normspeed = ms.minNormSpeed+ms.scopeNormSpeed*rand(Float64)
-                # Modify speed for twin to create an offset (only affects simulation with migration activated):
-                if ensI != Ndim
-                    normspeed = 1.25*normspeed # Non-twin is 25% faster
-                end
-
+                
                 indX = 3.1 + 2*randn(Float64)
                 indY = 9.1 + 2*randn(Float64)
-                ensemble[ensI][i] = createIndividual(indX, indY, normspeed, ms.nPerInd)
+                ensemble[ensI][i] = createIndividual(indX, indY, ms.nPerInd)
             end
         else
             # This is the twin and we should initialize from pre-recorded data:
             for i = 1:ms.nInd
-                # Random normspeed. This should ideally also have been recorded, but shouldn't matter
-                # since we are overriding positions and speeds. normspeed is also only used with migration.
-                normspeed = ms.minNormSpeed+ms.scopeNormSpeed*rand(Float64)
                 ensemble[ensI][i] = Individual(rTwinX[i,1], rTwinY[i,1], rTwinVX[i,1], rTwinVY[i,1], 
-                    0.0, normspeed, rTwinN[i,1], 0.0, 0.0, -1)
+                    0.0, rTwinN[i,1], 0.0, 0.0, -1)
             end
         end
     end

@@ -6,15 +6,14 @@ mutable struct Individual
     v_x::Float64
     v_y::Float64
     E::Float64
-    normSpeed::Float64
     n::Float64
     refX::Float64
     refY::Float64
     lastArea::Int
 end
 
-function createIndividual(x, y, normSpeed, n)
-    ind = Individual(x, y, 0.0, 0.0, 0.0, normSpeed, n, 0.0, 0.0, -1)
+function createIndividual(x, y, n)
+    ind = Individual(x, y, 0.0, 0.0, 0.0, n, 0.0, 0.0, -1)
     return ind
 end
 
@@ -47,82 +46,46 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
     v_x_new = 0.0
     v_y_new = 0.0
 
-    if ms.migration
-        # Figure out where the setpoint should be:
-        intervalLength = 7 # Time interval in which we aim towards one of the target areas before switching
-        targetArea = 1+mod(floor(t/intervalLength),4) # Find target area by the current time
-        # Check if the target area has changed. If so, find new set point:
-        if targetArea != ind.lastArea
-            ind.lastArea = targetArea
-            # Determine the target rectangle:
-            targetRect = [13 18; 8 13] # Area 1 (x1 x2; y1 y2)
-            if targetArea==2
-                targetRect = [13 18; 2 7] # Area 2
-            elseif targetArea==3
-                targetRect = [2 7; 2 7] # Area 2
-            elseif targetArea==4
-                targetRect = [2 7; 8 13] # Area 2
-            end        
-            # Choose a random setpoint in the target 
-            #ind.refX = targetRect[1,1] + (targetRect[1,2]-targetRect[1,1])*rand(Float64)
-            #ind.refY = targetRect[2,1] + (targetRect[2,2]-targetRect[2,1])*rand(Float64)
-            ind.refX = 0.5*(targetRect[1,2]+targetRect[1,1]) + 0.25*(targetRect[1,2]-targetRect[1,1])*randn(Float64)
-            ind.refY = 0.5*(targetRect[2,2]+targetRect[2,1]) + 0.25*(targetRect[2,2]-targetRect[2,1])*randn(Float64)
-        end
-        # Find vector from current position to setpoint:
-        vecToRef = [ind.refX-ind.x; ind.refY-ind.y]
-        # Find distance to setpoint:
-        distToRef = sqrt(vecToRef[1]*vecToRef[1] + vecToRef[2]*vecToRef[2])
-        # Adjusted standard speed:
-        v_norm = XSpeedMult*ind.normSpeed
-        # Find speed vector towards setpoint:
-        v_x_new = 0
-        v_y_new = 0
-        if distToRef > 0
-            v_x_new = v_norm*vecToRef[1]/distToRef
-            v_y_new = v_norm*vecToRef[2]/distToRef
-        end
-    else # No migration.
-        # We first decide on a vector tendency, then add random movement to it.
-        tend_x = 0.0
-        tend_y = 0.0
-        # If we are near an edge, add a tendency away from the edge:
-        bnd = 5/dxy
-        if ix < bnd
-            tend_x += 1.0*(bnd-ix)/bnd
-        end
-        if size(X_fld,1)-ix < bnd
-            tend_x -= 1.0*(bnd-(size(X_fld,1)-ix))/bnd
-        end
-        if iy < bnd
-            tend_y += 1.0*(bnd-iy)/bnd
-        end
-        if size(X_fld,2)-iy < bnd
-            tend_y -= 1.0*(bnd-(size(X_fld,2)-iy))/bnd
-        end
-        # Then, add a tendency depending along the local X_fld gradient:
-        if ix>1 && ix<size(X_fld,1)
-            tend_x += 1.5*(X_fld[ix+1,iy]-X_fld[ix-1,iy])
-        end
-        if iy>1 && iy<size(X_fld,2)
-            tend_y += 1.5*(X_fld[ix,iy+1]-X_fld[ix,iy-1])
-        end
-
-        # Then, if activated, add a tendency towards the center of the population:
-        if ms.pullTowardsCOG
-            vecToCOG = [cog[1]-ind.x cog[2]-ind.y]
-            lVec = sqrt(vecToCOG[1]*vecToCOG[1] + vecToCOG[2]*vecToCOG[2])
-            # If we are not exactly at the COG, add a pull in that direction:
-            if maximum(lVec) > 9
-                normVec = vecToCOG/lVec
-                tend_x += ms.pullTowardsCOGStrength*normVec[1]
-                tend_y += ms.pullTowardsCOGStrength*normVec[2]
-            end
-        end
-
-        v_x_new = 1.5*tend_x + randn()
-        v_y_new = 1.5*tend_y + randn()
+    # We first decide on a vector tendency, then add random movement to it.
+    tend_x = 0.0
+    tend_y = 0.0
+    # If we are near an edge, add a tendency away from the edge:
+    bnd = 5/dxy
+    if ix < bnd
+        tend_x += 1.0*(bnd-ix)/bnd
     end
+    if size(X_fld,1)-ix < bnd
+        tend_x -= 1.0*(bnd-(size(X_fld,1)-ix))/bnd
+    end
+    if iy < bnd
+        tend_y += 1.0*(bnd-iy)/bnd
+    end
+    if size(X_fld,2)-iy < bnd
+        tend_y -= 1.0*(bnd-(size(X_fld,2)-iy))/bnd
+    end
+    # Then, add a tendency depending along the local X_fld gradient:
+    if ix>1 && ix<size(X_fld,1)
+        tend_x += 1.5*(X_fld[ix+1,iy]-X_fld[ix-1,iy])
+    end
+    if iy>1 && iy<size(X_fld,2)
+        tend_y += 1.5*(X_fld[ix,iy+1]-X_fld[ix,iy-1])
+    end
+
+    # Then, if activated, add a tendency towards the center of the population:
+    if ms.pullTowardsCOG
+        vecToCOG = [cog[1]-ind.x cog[2]-ind.y]
+        lVec = sqrt(vecToCOG[1]*vecToCOG[1] + vecToCOG[2]*vecToCOG[2])
+        # If we are not exactly at the COG, add a pull in that direction:
+        if maximum(lVec) > 9
+            normVec = vecToCOG/lVec
+            tend_x += ms.pullTowardsCOGStrength*normVec[1]
+            tend_y += ms.pullTowardsCOGStrength*normVec[2]
+        end
+    end
+
+    v_x_new = 1.5*tend_x + randn()
+    v_y_new = 1.5*tend_y + randn()
+
 
     # Add random perturbations to the speed components:
     pertX = 0.0
