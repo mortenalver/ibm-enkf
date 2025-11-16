@@ -62,18 +62,18 @@ end
 function main(setDryrun, setResample)
 
     # Basic settings:
-    simnamePrefix = "test5000" 
+    simnamePrefix = "indi2500_6" 
     useRecordedTwin = true
-    recordedTwinPrefix = "C:/temp/d_gtwin5000_resample_"
+    recordedTwinPrefix = "C:/temp/d_gtwin_indi2500_4_resample_"
     dt = 0.1 # Time step
-    t_end = 50.1 # Simulation end time
+    t_end = 60.1 # Simulation end time
     storageInterval = 2
 
-    recordingTwin = false # True to record new twin:
+    recordingTwin = true # True to record new twin:
     if recordingTwin
         useRecordedTwin = false
         storageInterval = 1
-        simnamePrefix = "gtwin5000"
+        simnamePrefix = "gtwin_indi2500_4"
     end
     plotTimeStep = 40
     initFoodLevel = 1.0
@@ -81,9 +81,10 @@ function main(setDryrun, setResample)
     # Simulation parameters:
     ms = ModelSettings()
     ms.migration = false # If true, periodic migration through the four corners of the domain. If false, migration controlled by food field and random movement.
-    ms.indsInteraction = false # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
-    ms.indsInteractionThresh = 5.0 # Distance threshold for individual interaction.
-    ms.indsInteractionStrength = 0.005 # Strength of individual interaction
+    ms.indsInteraction = true # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
+    ms.indsInteractionThresh = 0.2 # Distance threshold for individual interaction.
+    ms.indsAlignStrength = 0.003 # Strength of individual interaction
+    ms.indsRepulseStrength = 0.05 # Strength of individual interaction
     ms.pullTowardsCOG = true # If true, individuals will be pulled towards the center of gravity of the population
     ms.pullTowardsCOGStrength = 0.25 # Strength of the pull towards COG if activated
     ms.speedUpdateRate = 0.6 # Multiplier for speed update - lower means more intertia in speed updates
@@ -95,14 +96,14 @@ function main(setDryrun, setResample)
     # Assimilation settings:
     as = AssimSettings()
     as.dryRun = setDryrun # If true, the assimilation process will be run but changes will not be applied.
-    as.N = 150# 100 # Number of ensemble members.
+    as.N = 15#0# 100 # Number of ensemble members.
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 20 # Time steps between each assimilation procedure
     as.speedsInStateVec = true # If true, include mean speed components per grid cell in the state vector.
     as.foodInStateVec = true # If true, include food field in the state vector
     as.measureFood = true # If true, include measurements of food
     as.regularMeasurements = true # If true, place measurements regularly at a given measSpacing
-    as.measSpacing = 2 # If regular measurements, sets the measurement spacing
+    as.measSpacing = 4 # If regular measurements, sets the measurement spacing
     as.nmeas = 1200 #2*800 # Number of randomly distributed meaurements 
     as.measVar = 0.5^2.0 # Squared measurement standard deviation
     # Not relevant when using ESTFK: as.perturbMeasurements = false # True to perturb measurement matrix bin analysis step
@@ -216,8 +217,9 @@ function main(setDryrun, setResample)
         println(0.1*round(Int, 10.0*t))
 
         # Time step of IBM:
+        totInteractions = 0
+            
         for ensI = 1:Ndim
-
             if ensI < Ndim || !useRecordedTwin
                 # Roll random numbers used to perturb individuals' speeds:
                 perturb = zeros(Float64, 12, 4)
@@ -227,8 +229,9 @@ function main(setDryrun, setResample)
                 end
                 
                 indsArray = ensemble[ensI]
-                X_fld_upd = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
+                X_fld_upd, avgInteractions = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
                 X_fld[:,:,ensI] = X_fld_upd
+                totInteractions += avgInteractions
             else
                 # This is the twin and we are using pre-recorded data:
                 indsArray = ensemble[ensI] 
@@ -244,7 +247,9 @@ function main(setDryrun, setResample)
                 #X_fld_upd = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
                 X_fld[:,:,ensI] = reshape(rTwinXfld[:,tstep], size(X_fld,1), size(X_fld,2))
             end
+
         end
+        println("Average interactions per ind: "*string(totInteractions/as.N))
 
         if mod(tstep, as.assimInterval) == 0
             println("Assim at tstep=", tstep)

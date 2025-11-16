@@ -7,13 +7,14 @@ mutable struct ModelSettings
     indsInteraction::Bool
     migration::Bool
     indsInteractionThresh::Float64
-    indsInteractionStrength::Float64
+    indsRepulseStrength::Float64
+    indsAlignStrength::Float64
     pullTowardsCOG::Bool
     pullTowardsCOGStrength::Float64
     minNormSpeed::Float64
     scopeNormSpeed::Float64
 
-    ModelSettings() = new(2000,1,0.6,true,false,1.0,false,1.0,2,3)
+    ModelSettings() = new(2000,1,0.6,true,false,1.0,1.0,false,1.0,2,3)
 end
 
 # Struct holding assimilation settings:

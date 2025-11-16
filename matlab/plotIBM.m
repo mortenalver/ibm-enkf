@@ -1,5 +1,6 @@
 
-prefix = 'C:/temp/test9_resample_';
+prefix = 'C:/temp/d_indi2500_3_resample_';
+%prefix = 'C:/temp/d_gtwin_indi2500_2_resample_';
 %prefix = 'C:/temp/nomigr11_resample_';
 %prefix = 'C:/temp/d_nomigr_long1_resample_';
 
@@ -62,7 +63,7 @@ for i=range
 
     nexttile(1)
     %scatter(x_twin(:,i), y_twin(:,i), [], N_twin(:,i), 'filled');
-    scatter(x_twin(:,i), y_twin(:,i), [], E_twin(:,i), 'filled');
+    h = scatter(x_twin(:,i), y_twin(:,i), 1, E_twin(:,i), 'filled');
     xlim([0 20]), ylim([0 15])
     colorbar%, clim([0 3])
     clim([0 3])
@@ -70,7 +71,7 @@ for i=range
 
     nexttile(ncol+1)
     %scatter(x_1(:,i), y_1(:,i), [], N_1(:,i), 'filled');
-    scatter(x_1(:,i), y_1(:,i), [], E_1(:,i), 'filled');
+    scatter(x_1(:,i), y_1(:,i), 1, E_1(:,i), 'filled');
     xlim([0 20]), ylim([0 15])
     colorbar%, clim([0 3])
     clim([0 3])

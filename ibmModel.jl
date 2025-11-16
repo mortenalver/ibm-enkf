@@ -143,7 +143,9 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
     ind.v_x += dt*ms.speedUpdateRate*(v_x_new - ind.v_x)
     ind.v_y += dt*ms.speedUpdateRate*(v_y_new - ind.v_y)
 
-    # If individual interaction is activated, orient away from close individuals:
+    # If individual interaction is activated, align with close individuals:
+    totInteractions = 0
+        
     if ms.indsInteraction
         dxInt = 0.0
         dyInt = 0.0
@@ -157,17 +159,24 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
             if (xdist[i]+ydist[i]) < (1.5*ms.indsInteractionThresh)
                 dist = sqrt(xdist[i]*xdist[i] + ydist[i]*ydist[i])
                 if dist < ms.indsInteractionThresh
-                    # Add a little to x and y speeds to move away from the close individual:
-                    # abxfac = abs((0.5*ms.indsInteractionThresh)/xdist[i])
-                    # abyfac = abs((0.5*ms.indsInteractionThresh)/ydist[i])
-                    # dxInt = dxInt + ms.indsInteractionStrength*sign(ind.x - xall[i])*min(1.0, abxfac)
-                    #dyInt = dyInt + ms.indsInteractionStrength*sign(ind.y - yall[i])*min(1.0, abyfac)
+                    totInteractions = totInteractions + 1
+
+                    # If closer than a given fraction of the threshold, add a little to x and y speeds 
+                    # to move away from the close individual:
+                    if dist < 0.66*ms.indsInteractionThresh
+                        abxfac = abs((0.5*ms.indsInteractionThresh)/xdist[i])
+                        abyfac = abs((0.5*ms.indsInteractionThresh)/ydist[i])
+                        dxInt = dxInt + ms.indsRepulseStrength*sign(ind.x - xall[i])*min(1.0, abxfac)
+                        dyInt = dyInt + ms.indsRepulseStrength*sign(ind.y - yall[i])*min(1.0, abyfac)
+
+
+                    end
                     
                     # Add a little to x and y speeds to align speed with the close individual:
                     relDist = dist/ms.indsInteractionThresh
                     nearInd = indsArray[i]
-                    dxInt += ms.indsInteractionStrength*(1.0-relDist)*(nearInd.v_x - ind.v_x)
-                    dyInt += ms.indsInteractionStrength*(1.0-relDist)*(nearInd.v_y - ind.v_y)
+                    dxInt += ms.indsAlignStrength*(1.0-relDist)*(nearInd.v_x - ind.v_x)
+                    dyInt += ms.indsAlignStrength*(1.0-relDist)*(nearInd.v_y - ind.v_y)
                     
 
                 end
@@ -178,13 +187,17 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
         ind.v_x += dt*dxInt
         ind.v_y += dt*dyInt
         
+        
     end
 
     # Update energy level:
     f = X/(X + 0.5)
     ind.E = ind.E + dt*(f - 0.25*ind.E)
+    #println(string(ind.E)*" / "*string(f))
+        
     X_fld[ix, iy] = max(0.0, X_fld[ix, iy]-dt*0.015*f)
 
+    return totInteractions
 end
 
 function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
@@ -217,13 +230,15 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
         cog[2] = ysum/ncount
     end
 
+    totInteractions = 0
     for i = 1:length(indsArray)
         ind = indsArray[i]
 
-        step(t, dt, ind, indsArray, perturb, i, xall, yall, X_fld, xrng, yrng, cog, ms)
-        
+        interactions = step(t, dt, ind, indsArray, perturb, i, xall, yall, X_fld, xrng, yrng, cog, ms)
+        totInteractions += interactions
     end
-   
+    #println("Average interactions per ind: "*string(totInteractions/length(indsArray)))
+
     # Perturb feed concentration field:
     X_pert = getRandomField([size(X_fld,1) size(X_fld,2)], 0.4, 25, 6, 0.0)
     X_fld = X_fld + dt.*X_pert
@@ -232,5 +247,5 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
     #X_fld = X_fld + fill(dt*0.5*0.025, size(X_fld,1), size(X_fld,2))
     #X_fld = X_fld + fill(dt*0.1*0.025, size(X_fld,1), size(X_fld,2))
     #X_fld = min.(X_fld, 2.0)
-    return X_fld
+    return X_fld, totInteractions/length(indsArray)
 end

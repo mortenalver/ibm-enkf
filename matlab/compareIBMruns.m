@@ -1,10 +1,14 @@
 direc = "C:/temp/";
 
 
-runs = ["d_test11_resample_", "test12_resample_", "test12_"];
-runNames = ["Free-run", "Resample", "Optimal transport"];
-%runs = ["d_test9_resample_", "test9_resample_"];
-%runNames = ["Dry run", "Assim resample"];
+%runs = ["d_test11_resample_", "test12_resample_", "test12_"];
+
+% runs = ["d_test2500_resample_", "test2500_resample_", "test2500_3_resample_", "test2500_4_resample_", "test2500_5_resample_"]%, "test5000_"];
+% runNames = ["Free-run", "Resample", "Resample 3", "Resample 4", "Resample 5"]%, "Optimal transport"];
+
+runs = ["d_indi2500_5_resample_", "indi2500_5_resample_", "indi2500_5_"];
+runNames = ["Free-run", "Resample", "OT"];
+
 
 dt = 2*0.1;
 
@@ -75,13 +79,13 @@ nexttile, plot(ttt, rmsX), title('Food field RMS'), grid on
 xlabel('Time')
 
 nexttile, bar(mean(rmsDens,1)), title('Mean density RMS'), xticklabels(runNames), grid on
-hold on, errorbar(1:3, mean(rmsDens,1), std(rmsDens,0,1),'Color','k','LineStyle','none','LineWidth',1);
+hold on, errorbar(1:length(runs), mean(rmsDens,1), std(rmsDens,0,1),'Color','k','LineStyle','none','LineWidth',1);
 
 nexttile, bar(mean(rmsE,1)), title('Mean energy RMS'), xticklabels(runNames), grid on
-hold on, errorbar(1:3, mean(rmsE,1), std(rmsE,0,1),'Color','k','LineStyle','none','LineWidth',1);
+hold on, errorbar(1:length(runs), mean(rmsE,1), std(rmsE,0,1),'Color','k','LineStyle','none','LineWidth',1);
 
 nexttile, bar(mean(rmsX,1)), title('Mean food field RMS'), xticklabels(runNames), grid on
-hold on, errorbar(1:3, mean(rmsX,1), std(rmsX,0,1),'Color','k','LineStyle','none','LineWidth',1);
+hold on, errorbar(1:length(runs), mean(rmsX,1), std(rmsX,0,1),'Color','k','LineStyle','none','LineWidth',1);
 
 exportgraphics(gcf, 'run_stats.eps')
 
@@ -98,12 +102,12 @@ nexttile, bar(mean(rmsEnkf(assimInt:assimInt:end,2:end))), grid on %, legend(run
 hold on, errorbar(1:length(inclR), mean(rmsEnkf(assimInt:assimInt:end,inclR),1), std(rmsEnkf(assimInt:assimInt:end,inclR),0,1),'Color','k','LineStyle','none','LineWidth',1);
 xticklabels(runNames(inclR)), grid on
 title('EnKF accuracy'), grid on
-ylim([0 2.5])
+ylim([0 6.5])
 
 nexttile, bar(mean(rmsEnkfIBM(assimInt:assimInt:end,inclR)))
 hold on, errorbar(1:length(inclR), mean(rmsEnkfIBM(assimInt:assimInt:end,inclR),1), std(rmsEnkfIBM(assimInt:assimInt:end,inclR),0,1),'Color','k','LineStyle','none','LineWidth',1);
 xticklabels(runNames(inclR)), grid on
-ylim([0 2.5])
+ylim([0 6.5])
 title('IBM update accuracy'), grid on
 
 exportgraphics(gcf, 'update_stats.eps')

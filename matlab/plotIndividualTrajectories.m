@@ -1,6 +1,7 @@
 
 direc = "C:/temp/";
-runs = ["test11_resample_", "test11_"];
+%runs = ["test5000_resample_", "test5000_"];
+runs = ["indi2500_5_resample_", "indi2500_5_"];
 runnames = ["Resampling", "Optimal transport"];
 %runs = ["test11_resample_"];
 %runnames = ["Resampling"];
@@ -63,7 +64,7 @@ for modI = 1:length(runs)
         hold on, plot(ttt(iFrom:end)-ttt(iFrom), E_e(idx(i),iFrom:end),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
         grid on, xlabel('Time')
-        title("Energy "+runnames(modI)+")");
+        title("Energy ("+runnames(modI)+")");
         
     end
 end
@@ -143,8 +144,8 @@ exportgraphics(gcf, 'frequencies.eps')
 
 %%
 % Find trajectories starting at almost the same position, and compare:
+runs = ["d_test5000_resample_", "test5000_"];
 
-runs = ["d_test11_resample_", "test11_"];
 runnames = ["Free-run", "Optimal transport"];
 %compareRun = 1;
     
