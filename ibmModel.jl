@@ -35,9 +35,6 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
     iy = max(1, min(Int(floor((yall[idx] - yrng[1])/dxy)), size(X_fld,2)))
     X = X_fld[ix,iy]
     
-    # Get food-dependent speed multiplier:
-    XSpeedMult = getSpeedMult(X)
-
     # Update position by speed:
     ind.x = ind.x + dt*(ind.v_x)
     ind.y = ind.y + dt*(ind.v_y)
@@ -50,25 +47,26 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
     tend_x = 0.0
     tend_y = 0.0
     # If we are near an edge, add a tendency away from the edge:
-    bnd = 5/dxy
-    if ix < bnd
-        tend_x += 1.0*(bnd-ix)/bnd
+    bnd = 3
+    k_bnd = 1.0
+    if ind.x < bnd
+        tend_x += k_bnd*(bnd-ind.x)/bnd
     end
-    if size(X_fld,1)-ix < bnd
-        tend_x -= 1.0*(bnd-(size(X_fld,1)-ix))/bnd
+    if ms.xMax-ind.x < bnd
+        tend_x -= k_bnd*(bnd-(ms.xMax-ind.x))/bnd
     end
-    if iy < bnd
-        tend_y += 1.0*(bnd-iy)/bnd
+    if ind.y < bnd
+        tend_y += k_bnd*(bnd-ind.y)/bnd
     end
-    if size(X_fld,2)-iy < bnd
-        tend_y -= 1.0*(bnd-(size(X_fld,2)-iy))/bnd
+    if ms.yMax-ind.y < bnd
+        tend_y -= k_bnd*(bnd-(ms.yMax-ind.y))/bnd
     end
     # Then, add a tendency depending along the local X_fld gradient:
     if ix>1 && ix<size(X_fld,1)
-        tend_x += 1.5*(X_fld[ix+1,iy]-X_fld[ix-1,iy])
+        tend_x += ms.k_X*(X_fld[ix+1,iy]-X_fld[ix-1,iy])
     end
     if iy>1 && iy<size(X_fld,2)
-        tend_y += 1.5*(X_fld[ix,iy+1]-X_fld[ix,iy-1])
+        tend_y += ms.k_X*(X_fld[ix,iy+1]-X_fld[ix,iy-1])
     end
 
     # Then, if activated, add a tendency towards the center of the population:
@@ -83,8 +81,8 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
         end
     end
 
-    v_x_new = 1.5*tend_x + randn()
-    v_y_new = 1.5*tend_y + randn()
+    v_x_new = tend_x + 0.5*randn()
+    v_y_new = tend_y + 0.5*randn()
 
 
     # Add random perturbations to the speed components:
@@ -94,7 +92,7 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
         # Distance from perturbation central point:
         pertVec = [perturb[i,3]-ind.x perturb[i,4]-ind.y]
         pertDist = sqrt(pertVec[1]*pertVec[1]+ pertVec[2]*pertVec[2])
-        pertDist = pertDist / 10.0 #5.0
+        pertDist = pertDist / ms.d_wuv #/ 10.0 #5.0
         distFactor = exp(-(pertDist*pertDist))
         pertX = pertX + perturb[i,1]*distFactor
         pertY = pertY + perturb[i,2]*distFactor
@@ -102,10 +100,7 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
     v_x_new += pertX
     v_y_new += pertY
 
-    # Update the speed towards the newly computed speed:
-    ind.v_x += dt*ms.speedUpdateRate*(v_x_new - ind.v_x)
-    ind.v_y += dt*ms.speedUpdateRate*(v_y_new - ind.v_y)
-
+    
     # If individual interaction is activated, align with close individuals:
     totInteractions = 0
         
@@ -119,24 +114,25 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
                 continue # Individuals do not interact with themselves
             end
             # Check if x+y distance is less than a threshold: 
-            if (xdist[i]+ydist[i]) < (1.5*ms.indsInteractionThresh)
+            if (xdist[i]+ydist[i]) < (1.5*ms.indsAlignThresh)
                 dist = sqrt(xdist[i]*xdist[i] + ydist[i]*ydist[i])
-                if dist < ms.indsInteractionThresh
+                if dist < ms.indsAlignThresh
                     totInteractions = totInteractions + 1
 
-                    # If closer than a given fraction of the threshold, add a little to x and y speeds 
+                    # If closer than the repulse threshold, add a little to x and y speeds 
                     # to move away from the close individual:
-                    if dist < 0.66*ms.indsInteractionThresh
-                        abxfac = abs((0.5*ms.indsInteractionThresh)/xdist[i])
-                        abyfac = abs((0.5*ms.indsInteractionThresh)/ydist[i])
-                        dxInt = dxInt + ms.indsRepulseStrength*sign(ind.x - xall[i])*min(1.0, abxfac)
-                        dyInt = dyInt + ms.indsRepulseStrength*sign(ind.y - yall[i])*min(1.0, abyfac)
+                    if dist < ms.indsRepulseThresh
+                        #abxfac = abs(ms.indsRepulseThresh/xdist[i])
+                        #abyfac = abs(ms.indsRepulseThresh/ydist[i])
+                        abfac = (ms.indsRepulseThresh - dist)/ms.indsRepulseThresh
+                        dxInt = dxInt + ms.indsRepulseStrength*sign(ind.x - xall[i])*abfac*xdist[i]/dist
+                        dyInt = dyInt + ms.indsRepulseStrength*sign(ind.y - yall[i])*abfac*ydist[i]/dist
 
 
                     end
                     
                     # Add a little to x and y speeds to align speed with the close individual:
-                    relDist = dist/ms.indsInteractionThresh
+                    relDist = dist/ms.indsAlignThresh
                     nearInd = indsArray[i]
                     dxInt += ms.indsAlignStrength*(1.0-relDist)*(nearInd.v_x - ind.v_x)
                     dyInt += ms.indsAlignStrength*(1.0-relDist)*(nearInd.v_y - ind.v_y)
@@ -146,10 +142,13 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
             end
         end
 
-        # Add the summed adjustments to speed:
-        ind.v_x += dt*dxInt
-        ind.v_y += dt*dyInt
+        # Add the summed adjustments to the new speed speed:
+        v_x_new += dxInt
+        v_y_new += dyInt
         
+        # Update the speed towards the newly computed speed:
+        ind.v_x += dt*ms.speedUpdateRate*(v_x_new - ind.v_x)
+        ind.v_y += dt*ms.speedUpdateRate*(v_y_new - ind.v_y)
         
     end
 
@@ -203,7 +202,7 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
     #println("Average interactions per ind: "*string(totInteractions/length(indsArray)))
 
     # Perturb feed concentration field:
-    X_pert = getRandomField([size(X_fld,1) size(X_fld,2)], 0.4, 25, 6, 0.0)
+    X_pert = getRandomField([size(X_fld,1) size(X_fld,2)], ms.sigma_X, ms.n_wX, ms.d_wX, 0.0)
     X_fld = X_fld + dt.*X_pert
 
     # Add food everywhere to a maximum of 2:

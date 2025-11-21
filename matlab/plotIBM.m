@@ -1,6 +1,7 @@
 
-prefix = 'C:/temp/d_indi2500_3_resample_';
-%prefix = 'C:/temp/d_gtwin_indi2500_2_resample_';
+prefix = 'C:/temp/d_indi2500_11_resample_';
+%prefix = 'C:/temp/d_gtwin_indi2500_11_resample_';
+%prefix = 'C:/temp/indi2500_10_resample_';
 %prefix = 'C:/temp/nomigr11_resample_';
 %prefix = 'C:/temp/d_nomigr_long1_resample_';
 
@@ -11,7 +12,7 @@ dims = dlmread([prefix 'fieldDims.csv']);
 
 % Read twin values:
 
-dt = 2*0.1;
+dt = 2*0.2;
 speedup = 3;
 
 x_twin = dlmread([prefix 'twinX.csv']);
@@ -55,7 +56,7 @@ else
     range = plotInd;
 end
 
-rmsValues = zeros(length(range),1);
+errorValues = zeros(length(range),4);
 piv = 0;
 for i=range
     time = dt*i;
@@ -101,18 +102,23 @@ for i=range
     clim([0 50])
     title('Density field (ensemble)')
 
-    nexttile(ncol+3)
-    dFieldE = reshape(densStd_e(:,i), dims(1), dims(2));
-    pcolor(dFieldE'), shading flat, colorbar
-    clim([0 5])
-    title('Stddev density (ensemble)')
-
     nexttile(3)
+    dFieldT = reshape(dens_twin(:,i), dims(1), dims(2));
+    dFieldE = reshape(dens_e(:,i), dims(1), dims(2));
     diffField = dFieldT-dFieldE;
-    rmsValues(piv) = rms(diffField(:));
+    rmsValues(piv,1) = rms(diffField(:));
+    rmsValues(piv,2) = mean(abs(diffField(:)));
+    sortedErr = sort(abs(diffField(:)));
+    rmsValues(piv,3) = sortedErr(round(0.9*length(sortedErr)));
+    corrvalues = corrcoef([dFieldT(:) dFieldE(:)]);
+    rmsValues(piv,4) = corrvalues(1,2);
     pcolor(diffField'), shading flat, colorbar,
     title(['Deviation RMS: ' num2str(rmsValues(piv),3)])
     clim([-20 20])
+
+    nexttile(ncol+3)
+    histogram(diffField(:))
+    title('Density deviations')
 
     % nexttile(5)
     % dFieldT = reshape(U_twin(:,i), dims(1), dims(2));
@@ -160,4 +166,7 @@ end
 
 close(v);
 
-figure, plot(rmsValues)
+figure
+nexttile, plot(rmsValues(:,1:3)), grid on, title('Deviation metrics')
+legend('RMS', 'MAE','90 percentile')
+nexttile, plot(rmsValues(:,4)), grid on, title('Correlation coefficient')

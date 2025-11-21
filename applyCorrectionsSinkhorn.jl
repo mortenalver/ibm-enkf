@@ -46,7 +46,7 @@ function applyCorrectionsSinkhorn(indsArray, correctedField, origField, xlim, yl
         end
     end
     if doWrite
-        println("Calling sinkhorn algorithm. sizes: "*string(size(corr))*" "*string(size(a))*" "*string(size(C)))
+        println("Calling sinkhorn algorithm.")
     end
 
     
