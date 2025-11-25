@@ -66,24 +66,24 @@ end
 function main(setDryrun, setResample, recordingTwin)
 
     # Basic settings:
-    simnamePrefix = "indi2500_11" 
+    simnamePrefix = "indi2500_13" 
     useRecordedTwin = true
-    recordedTwinPrefix = "C:/temp/d_gtwin_indi2500_11_resample_"
+    recordedTwinPrefix = "C:/temp/d_gtwin_indi2500_12_resample_"
     dt = 0.2 # Time step
-    t_end = 60.0 # Simulation end time
+    t_end = 50.2 # Simulation end time
     storageInterval = 2
 
     # Assimilation settings:
     as = AssimSettings()
-    as.N = 100# 100 # Number of ensemble members.
+    as.N = 150# 100 # Number of ensemble members.
     
 
     #recordingTwin = true # True to record new twin:
     if recordingTwin
-        t_end = 60.0
+        t_end = 120.0
         useRecordedTwin = false
         storageInterval = 1
-        simnamePrefix = "gtwin_indi2500_11"
+        simnamePrefix = "gtwin_indi2500_12"
         as.N = 2
     end
     plotTimeStep = 40

@@ -81,8 +81,14 @@ function getLocMatrix(dimensions, M, locDist)
          coord2 = getStateCoords(jspatial, dimensions)
          distVec = [coord1[1]-coord2[1] coord1[2]-coord2[2]]
          distanceSq = distVec[1]*distVec[1] + distVec[2]*distVec[2]
-         #if distance < locDist
-         xloc[j, i] = exp(-distanceSq/locDistSq)
+         distance = sqrt(distanceSq)
+         if distance < locDist
+            xloc[j, i] = 1.0
+         else
+            xloc[j, i] = max(0.0, 1.0-(distance-locDist)/locDist)
+         end
+
+         #xloc[j, i] = exp(-distanceSq/locDistSq)
 
          #end
       end
@@ -90,6 +96,7 @@ function getLocMatrix(dimensions, M, locDist)
    end
    return xloc
 end
+
 
 function getStateCoords(index, dims)
    res = zeros(Float64, 2)

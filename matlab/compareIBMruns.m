@@ -6,15 +6,24 @@ direc = "C:/temp/";
 % runs = ["d_test2500_resample_", "test2500_resample_", "test2500_3_resample_", "test2500_4_resample_", "test2500_5_resample_"]%, "test5000_"];
 % runNames = ["Free-run", "Resample", "Resample 3", "Resample 4", "Resample 5"]%, "Optimal transport"];
 
-runs = ["d_indi2500_11_resample_", "indi2500_11_resample_", "indi2500_11_"];
+runs = ["d_indi2500_12_resample_", "indi2500_13_resample_", "indi2500_12_resample_"];%"indi2500_12_"];
 runNames = ["Free-run", "RS", "OT"];
 
 
 dt = 2*0.2;
 
+plotDists = 1;
+plotTimes = [10 50 100];
+
+
+
 dims_and_int = dlmread(direc+runs(1)+"fieldDims.csv");
 dims = dims_and_int(1:2);
 assimInt = dims_and_int(3);
+
+if plotDists > 0
+    figure, tiledlayout(length(plotTimes), 1+length(runs),'TileSpacing','compact')
+end
 
 for i=1:length(runs)
     prefix = strcat(direc, runs(i))
@@ -30,6 +39,12 @@ for i=1:length(runs)
     E_twin = dlmread(prefix+"twinEnergy.csv");
     E_e = dlmread(prefix+"eEnergy.csv");
     enkfField = dlmread(prefix+"enkfField.csv");
+    x_twin = dlmread(prefix+"twinX.csv");
+    y_twin = dlmread(prefix+"twinY.csv");
+    Ei_twin = dlmread(prefix+"twinE.csv");
+    x_1 = dlmread(prefix+"e1X.csv");
+    y_1 = dlmread(prefix+"e1Y.csv");
+    Ei1 = dlmread(prefix+"e1E.csv");
 
     % On first iteration, initialize arrays:
     if i==1
@@ -46,7 +61,7 @@ for i=1:length(runs)
     end
 
     for j=1:size(dens_twin,2)
-        j
+        
         devi = dens_twin(:,j) - dens_e(:,j);
         rmsDens(j,i) = rms(devi);
         stdDens(j,i) = mean(densStd_e(:,j));
@@ -70,6 +85,30 @@ for i=1:length(runs)
         devi = dens_twin(:,j) - enkfField(:,j);
         rmsEnkf(j,i) = rms(devi);
         
+        if plotDists > 0
+            clims = [0 100];
+            ppp = find(j*dt == plotTimes);
+            if numel(ppp)>0
+                j
+                if i==1
+                    % Plot twin:
+                    nexttile((ppp-1)*(1+length(runs))+1)
+                    dField = reshape(dens_twin(:,j), dims(1), dims(2));
+                    pcolor(dField'), shading flat, colorbar, axis image
+                    clim(clims)
+                    %scatter(x_twin(:,i), y_twin(:,j), 1, Ei_twin(:,i), 'filled');
+                    %xlim([0 20]), ylim([0 15]), colorbar, clim([0 3])
+                    title("Twin (t="+string(plotTimes(ppp))+")")
+                end
+                nexttile((ppp-1)*(1+length(runs))+1+i)
+                dField = reshape(dens_e(:,j), dims(1), dims(2));
+                pcolor(dField'), shading flat, colorbar, , axis image
+                clim(clims)
+                %scatter(x_1(:,i), y_1(:,i), 1, Ei1(:,j), 'filled');
+                %xlim([0 20]), ylim([0 15]), colorbar, clim([0 3])
+                title(runNames(i)+" (t="+string(plotTimes(ppp))+")")
+            end
+        end
     end
 end
 %%

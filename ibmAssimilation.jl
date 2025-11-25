@@ -119,10 +119,11 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
 
     #X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
 
-    #selectObs(i) = compact_locfun(sqrt.((x_states[i] .- xmeas).^2 .+ (y_states[i] .- ymeas).^2))#./as.localizationDist)
+    #selectObs(i) = compact_locfun(reshape(sqrt.((x_states[i] .- xmeas).^2 .+ (y_states[i] .- ymeas).^2), length(xmeas), 1))#./as.localizationDist)
+    selectObs(i) = exp.(-((x_states[i] .- xmeas).^2 .+ (y_states[i] .- ymeas).^2)./(as.localizationDist.^2))
     #selectObs(i) = Vector(ones(Float64, length(xmeas))) #exp.(-sqrt.((x_states[i] .- xmeas).^2 .+ (y_states[i] .- ymeas).^2)./as.localizationDist)
 
-    #vv = Vector(1:convert(Float64, size(densEnsemble,1)))
+    vv = Vector(1:convert(Float64, size(densEnsemble,1)))
 
     #println(size(densEnsemble))
     #println(size(M))
@@ -130,18 +131,13 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
     #println(size(R))
     #println(size(vv))
     #println(size(M*densEnsemble))
-    #println(typeof(densEnsemble))
-    #println(typeof(M))
-    #println(typeof(Rvec))
-    #println(typeof(y))
-    #println(typeof(vv))
-    #println(typeof(selectObs(21)))
     #testloc = selectObs(210)
     #println(string(minimum(testloc))*"   "*string(maximum(testloc)))
-
-    #X_upd, X_upd_mean = DataAssim.local_ESTKF(densEnsemble, M, y, Rvec, vv, selectObs)
+    # function $method(Xf,HXf,y,R,H; debug = false, tolerance=1e-10)
+    #X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
+    X_upd, X_upd_mean = DataAssim.local_ESTKF(densEnsemble, M, y, Rvec, vv, selectObs)
     #meanField2 = reshape(X_upd_mean, dimensions[1], dimensions[2])
-    X_upd = enKF(densEnsemble, M, xloc, y, Rval, as) # Get corrected ensemble matrix X_upd
+    #X_upd = enKF(densEnsemble, M, xloc, y, Rval, as) # Get corrected ensemble matrix X_upd
     
     #println("densEnsemble: "*string(size(densEnsemble)))
     #println("X_upd: "*string(size(X_upd)))
@@ -285,3 +281,4 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
     # Return the updated ensemble and the corrected density field straight from the EnKF:
     return ensemble, X_fld, updFieldPre
 end
+

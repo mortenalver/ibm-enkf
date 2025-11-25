@@ -1,7 +1,7 @@
 
 direc = "C:/temp/";
 %runs = ["test5000_resample_", "test5000_"];
-runs3 = ["d_indi2500_11_resample_", "indi2500_11_resample_", "indi2500_11_"];
+runs3 = ["d_indi2500_12_resample_", "indi2500_12_resample_", "indi2500_12_"];
 %runs = ["test11_resample_"];
 %runnames = ["Resampling"];
 % Read twin and ensemble densities:
@@ -11,7 +11,7 @@ y_twin = dlmread(prefix+"twinY.csv");
 E_twin = dlmread(prefix+"twinE.csv");
 N_twin = dlmread(prefix+"twinN.csv");
 
-dt = 2*0.1;
+dt = 2*0.2;
 ttt = dt*(1:size(x_twin,2));
 
 
@@ -95,7 +95,7 @@ for varI = 1:length(varsToAnalyze)
     for i=1:size(E_twin,1)
     
         t1 = E_twin(i,:);
-        [psd_t1, w1] = periodogram(t1);
+        [psd_t1, w1] = periodogram(t1, hann(length(t1)));
         if isempty(perioSum)
             perioSum = psd_t1;
         else
@@ -117,7 +117,7 @@ for varI = 1:length(varsToAnalyze)
         E_e = dlmread(prefix+"e1"+varToAnalyze+".csv");
         for i=1:size(E_e,1)
             t1 = E_e(i,:);
-            [psd_t1, w1] = periodogram(t1);
+            [psd_t1, w1] = periodogram(t1, hann(length(t1)));
             if isempty(perioSum)
                 perioSum = psd_t1;
             else
@@ -133,9 +133,13 @@ for varI = 1:length(varsToAnalyze)
     
     end
     
+    % Normalized frequencies in w1 are in rad/sample.
+    % To convert to frequency in (time unit)^-1:  w1 / (2 pi) / dt
+    freq = w1/(2*pi)/dt;
     figure(perio), nexttile(varI)
-    semilogy(w1,[perioMean perioMeanRuns])
-    xlabel('Normalized frequency')
+    semilogy(freq,[perioMean perioMeanRuns])
+    xlim([0 freq(end)]);
+    xlabel('Frequency (d^{-1})')
     grid on; 
     if varI==1
         lgd = legend(["Twin" runnames])

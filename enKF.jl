@@ -30,6 +30,8 @@ function enKF(X, M, xloc, d, Rval, as)
     A = X - (1/N)*X*ones(N,1)*ones(1,N)
     #println("A: ", size(A))
     K = xloc .* ((1/(1+N))*(A*MA')*inv(P))
+    #K = ((1/(1+N))*(A*MA')*inv(P))
+    #println("Warning: no localization")
     #println("K: ", size(K))
     # K_loc = (1/(1+N))*((A*MA').*Xloc)*inv(P_loc);
     # Compute analysis:
