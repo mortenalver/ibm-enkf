@@ -29,7 +29,11 @@ function enKF(X, M, xloc, d, Rval, as)
     # P_loc = (1/(N-1))*((MA*MA').*XlocM) + C_ee;
     A = X - (1/N)*X*ones(N,1)*ones(1,N)
     #println("A: ", size(A))
-    K = xloc .* ((1/(1+N))*(A*MA')*inv(P))
+    #K = xloc .* ((1/(1+N))*(A*MA')*inv(P))
+    K = ((1/(1+N))*(A*MA')*inv(P))
+
+    writedlm(storageDir*"K.csv", K, ',')
+
     #K = ((1/(1+N))*(A*MA')*inv(P))
     #println("Warning: no localization")
     #println("K: ", size(K))

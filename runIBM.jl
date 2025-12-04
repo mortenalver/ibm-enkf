@@ -61,16 +61,19 @@ function allrun()
     normrun()
 end
 
-
+storageDir = "C:/temp/"
+if ~isdir(storageDir)
+    storageDir = "./"
+end
 
 function main(setDryrun, setResample, recordingTwin)
 
     # Basic settings:
-    simnamePrefix = "indi2500_13" 
+    simnamePrefix = "perturb_2" 
     useRecordedTwin = true
-    recordedTwinPrefix = "C:/temp/d_gtwin_indi2500_12_resample_"
+    recordedTwinPrefix = storageDir*"d_gtwin_perturb_1_resample_"
     dt = 0.2 # Time step
-    t_end = 50.2 # Simulation end time
+    t_end = 20.2 # Simulation end time
     storageInterval = 2
 
     # Assimilation settings:
@@ -80,10 +83,10 @@ function main(setDryrun, setResample, recordingTwin)
 
     #recordingTwin = true # True to record new twin:
     if recordingTwin
-        t_end = 120.0
+        t_end = 80.0
         useRecordedTwin = false
         storageInterval = 1
-        simnamePrefix = "gtwin_indi2500_12"
+        simnamePrefix = "gtwin_perturb_1"
         as.N = 2
     end
     plotTimeStep = 40
@@ -95,19 +98,21 @@ function main(setDryrun, setResample, recordingTwin)
     ms.yMax = 15
     ms.k_X = 2.5 # Strength of motion towards food gradient.
     ms.indsInteraction = true # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
-    ms.indsAlignThresh = 0.2 # Distance threshold for individual alignment.
+    ms.indsAlignThresh = 0.3 # Distance threshold for individual alignment.
     ms.indsRepulseThresh = 0.08 # Distance threshold for individual repulsion.
+    ms.indsAttractThresh = 0.75 # Distance threshold for individual attraction.
     ms.n_wuv = 4 # Number of perturbations for u/v
     ms.n_wX = 2 # Number of perturbations for X
-    ms.sigma_uv = 3.0 # Intensity of u/v random perturbations
+    ms.sigma_uv = 1.0 # 3.0 # Intensity of u/v random perturbations
     ms.sigma_X = 0.8 # Intensity of X random perturbations
     ms.d_wuv = 5.0
     ms.d_wX = 6.0
     ms.indsAlignStrength = 0.01 # Strength of individual interaction
     ms.indsRepulseStrength = 0.4#0.08 # Strength of individual interaction
-    ms.pullTowardsCOG = true # If true, individuals will be pulled towards the center of gravity of the population
+    ms.indsAttractStrength = 0.005 # Strength of individual interaction
+    ms.pullTowardsCOG = false # If true, individuals will be pulled towards the center of gravity of the population
     ms.pullTowardsCOGStrength = 0.75#0.3 # Strength of the pull towards COG if activated
-    ms.speedUpdateRate = 0.6 # Multiplier for speed update - lower means more intertia in speed updates
+    ms.speedUpdateRate = 0.45 #0.6 # Multiplier for speed update - lower means more intertia in speed updates
     ms.nInd = 5000 #6000 # Number of individuals
     ms.nPerInd = 1.0 # individuals per super individual
     
@@ -119,11 +124,12 @@ function main(setDryrun, setResample, recordingTwin)
     as.foodInStateVec = true # If true, include food field in the state vector
     as.measureFood = true # If true, include measurements of food
     as.regularMeasurements = true # If true, place measurements regularly at a given measSpacing
-    as.measSpacing = 3 # If regular measurements, sets the measurement spacing
+    as.measSpacing = 4 # If regular measurements, sets the measurement spacing
     as.nmeas = 1200 #2*800 # Number of randomly distributed meaurements 
-    as.measVar = 0.5^2.0 # Squared measurement standard deviation
-    # Not relevant when using ESTFK: as.perturbMeasurements = false # True to perturb measurement matrix bin analysis step
-    as.localizationDist = 5.0 # Localization distance
+    as.measVar = 0.25^2.0 # Squared measurement standard deviation
+    # Not relevant when using ESTFK: 
+    as.perturbMeasurements = true # True to perturb measurement matrix bin analysis step
+    as.localizationDist = 8.0 # Localization distance
 
     # Modify sim name according to run mode:
     simname = simnamePrefix*"_"
@@ -228,7 +234,7 @@ function main(setDryrun, setResample, recordingTwin)
         # Time step of IBM:
         totInteractions = 0
             
-        for ensI = 1:Ndim
+        Threads.@threads for ensI = 1:Ndim
             if ensI < Ndim || !useRecordedTwin
                 # Roll random numbers used to perturb individuals' speeds:
                 perturb = zeros(Float64, ms.n_wuv, 4)
@@ -362,13 +368,16 @@ function main(setDryrun, setResample, recordingTwin)
         #     updMeanField = reshape(mean(densEnsemble, dims=2), dimensions[1], dimensions[2])
         #     display(heatmap(updMeanField))
         # end
+
+        # Flush stdout in case we are running on a HPC machine:
+        flush(stdout)
     end
     
     # Storage directory:
-    prefix = "C:/temp/"*simname
+    prefix = storageDir*simname
     
     # Store a single file giving the field dimensions and the assimilation interval divided by storage interval:
-    writedlm(prefix*"fieldDims.csv", [size(densityField,1) size(densityField,2) as.assimInterval/storageInterval], ',')
+    writedlm(prefix*"fieldDims.csv", [size(densityField,1) size(densityField,2) as.assimInterval/storageInterval dt*storageInterval], ',')
 
     # Store twin states to files:
     writedlm(prefix*"twinX.csv", storeXYE_twin[1,:,:], ',')

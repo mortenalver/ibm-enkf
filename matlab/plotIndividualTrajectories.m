@@ -1,7 +1,9 @@
 
-direc = "C:/temp/";
+%direc = "C:/temp/";
+direc = "D:/work/ibm-enkf/test1/"
 %runs = ["test5000_resample_", "test5000_"];
-runs3 = ["d_indi2500_12_resample_", "indi2500_12_resample_", "indi2500_12_"];
+runs3 = ["d_test_1_resample_", "test_1_resample_", "test_1_resample_"]
+%runs3 = ["d_indi2500_12_resample_", "indi2500_12_resample_", "indi2500_12_"];
 %runs = ["test11_resample_"];
 %runnames = ["Resampling"];
 % Read twin and ensemble densities:

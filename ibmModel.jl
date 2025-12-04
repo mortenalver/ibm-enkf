@@ -81,8 +81,8 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
         end
     end
 
-    v_x_new = tend_x + 0.5*randn()
-    v_y_new = tend_y + 0.5*randn()
+    v_x_new = tend_x + 0.25*randn()
+    v_y_new = tend_y + 0.25*randn()
 
 
     # Add random perturbations to the speed components:
@@ -114,7 +114,7 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
                 continue # Individuals do not interact with themselves
             end
             # Check if x+y distance is less than a threshold: 
-            if (xdist[i]+ydist[i]) < (1.5*ms.indsAlignThresh)
+            if (xdist[i]+ydist[i]) < (ms.indsAttractThresh)
                 dist = sqrt(xdist[i]*xdist[i] + ydist[i]*ydist[i])
                 if dist < ms.indsAlignThresh
                     totInteractions = totInteractions + 1
@@ -138,19 +138,30 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
                     dyInt += ms.indsAlignStrength*(1.0-relDist)*(nearInd.v_y - ind.v_y)
                     
 
+                elseif dist < ms.indsAttractThresh
+                    totInteractions = totInteractions + 1
+
+                    # If further from align threshold but closer than attract threshold, add a little to
+                    # x and y speeds to move towards the close individual:
+                    dxInt = dxInt + ms.indsAttractStrength*sign(xall[i] - ind.x)*xdist[i]/dist
+                    dyInt = dyInt + ms.indsAttractStrength*sign(yall[i] - ind.y)*ydist[i]/dist
+                    #dxInt = dxInt + ms.indsAttractStrength*((ms.indsAttractThresh-dist)/(ms.indsAttractThresh-ms.indsAlignThresh))*sign(xall[i] - ind.x)*xdist[i]/dist
+                    #dyInt = dyInt + ms.indsAttractStrength*((ms.indsAttractThresh-dist)/(ms.indsAttractThresh-ms.indsAlignThresh))*sign(yall[i] - ind.y)*ydist[i]/dist
                 end
             end
         end
-
+        
         # Add the summed adjustments to the new speed speed:
         v_x_new += dxInt
         v_y_new += dyInt
-        
-        # Update the speed towards the newly computed speed:
-        ind.v_x += dt*ms.speedUpdateRate*(v_x_new - ind.v_x)
-        ind.v_y += dt*ms.speedUpdateRate*(v_y_new - ind.v_y)
-        
+
     end
+
+    
+    # Update the speed towards the newly computed speed:
+    ind.v_x += dt*ms.speedUpdateRate*(v_x_new - ind.v_x)
+    ind.v_y += dt*ms.speedUpdateRate*(v_y_new - ind.v_y)
+    
 
     # Update energy level:
     f = X/(X + 0.5)

@@ -8,8 +8,10 @@ mutable struct ModelSettings
     indsInteraction::Bool
     indsAlignThresh::Float64
     indsRepulseThresh::Float64
+    indsAttractThresh::Float64
     indsRepulseStrength::Float64
     indsAlignStrength::Float64
+    indsAttractStrength::Float64
     pullTowardsCOG::Bool
     pullTowardsCOGStrength::Float64
     n_wuv::Int
@@ -20,7 +22,7 @@ mutable struct ModelSettings
     d_wX::Float64
     xMax::Float64
     yMax::Float64
-    ModelSettings() = new(2000,1,0.6,1.0,true,1.0,1.0,1.0,
+    ModelSettings() = new(2000,1,0.6,1.0,true,1.0,1.0,1.0,1.0,1.0,
         false,1.0,5,5,1.0,1.0,2.0,2.0,10.0,10.0)
 end
 
