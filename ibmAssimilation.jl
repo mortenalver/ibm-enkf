@@ -249,7 +249,8 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
     # If activated, apply corrections for the food field:
     if as.foodInStateVec
         Threads.@threads for ensI=1:as.N
-            X_fld[:,:,ensI] = reshape(X_upd[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos,ensI], dimensions[1], dimensions[2])
+            newXfld = reshape(X_upd[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos,ensI], dimensions[1], dimensions[2])
+            X_fld[:,:,ensI] = min.(max.(newXfld,0.),as.foodLimit)
         end
     end
 

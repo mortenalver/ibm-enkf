@@ -69,16 +69,16 @@ end
 function main(setDryrun, setResample, recordingTwin)
 
     # Basic settings:
-    simnamePrefix = "perturb_2" 
+    simnamePrefix = "perturb_7" 
     useRecordedTwin = true
     recordedTwinPrefix = storageDir*"d_gtwin_perturb_1_resample_"
     dt = 0.2 # Time step
-    t_end = 20.2 # Simulation end time
+    t_end = 79.8 # Simulation end time
     storageInterval = 2
 
     # Assimilation settings:
     as = AssimSettings()
-    as.N = 150# 100 # Number of ensemble members.
+    as.N = 300# 100 # Number of ensemble members.
     
 
     #recordingTwin = true # True to record new twin:
@@ -109,10 +109,10 @@ function main(setDryrun, setResample, recordingTwin)
     ms.d_wX = 6.0
     ms.indsAlignStrength = 0.01 # Strength of individual interaction
     ms.indsRepulseStrength = 0.4#0.08 # Strength of individual interaction
-    ms.indsAttractStrength = 0.005 # Strength of individual interaction
+    ms.indsAttractStrength = 0.002 # Strength of individual interaction
     ms.pullTowardsCOG = false # If true, individuals will be pulled towards the center of gravity of the population
     ms.pullTowardsCOGStrength = 0.75#0.3 # Strength of the pull towards COG if activated
-    ms.speedUpdateRate = 0.45 #0.6 # Multiplier for speed update - lower means more intertia in speed updates
+    ms.speedUpdateRate = 0.4 # 0.6 # Multiplier for speed update - lower means more intertia in speed updates
     ms.nInd = 5000 #6000 # Number of individuals
     ms.nPerInd = 1.0 # individuals per super individual
     
@@ -124,12 +124,12 @@ function main(setDryrun, setResample, recordingTwin)
     as.foodInStateVec = true # If true, include food field in the state vector
     as.measureFood = true # If true, include measurements of food
     as.regularMeasurements = true # If true, place measurements regularly at a given measSpacing
-    as.measSpacing = 4 # If regular measurements, sets the measurement spacing
+    as.measSpacing = 3 # If regular measurements, sets the measurement spacing
     as.nmeas = 1200 #2*800 # Number of randomly distributed meaurements 
     as.measVar = 0.25^2.0 # Squared measurement standard deviation
     # Not relevant when using ESTFK: 
     as.perturbMeasurements = true # True to perturb measurement matrix bin analysis step
-    as.localizationDist = 8.0 # Localization distance
+    as.localizationDist = 2.5 #3.0 # Localization distance
 
     # Modify sim name according to run mode:
     simname = simnamePrefix*"_"

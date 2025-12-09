@@ -6,15 +6,15 @@ direc = "D:/work/ibm-enkf/test1/"
 % runs = ["d_test2500_resample_", "test2500_resample_", "test2500_3_resample_", "test2500_4_resample_", "test2500_5_resample_"]%, "test5000_"];
 % runNames = ["Free-run", "Resample", "Resample 3", "Resample 4", "Resample 5"]%, "Optimal transport"];
 
-runs = ["d_perturb_3_resample_", "perturb_3_resample_", "perturb_3_"];
+runs = ["d_perturb_5_resample_", "perturb_6_resample_", "perturb_7_resample_", "perturb_6_"];
 %runs = ["d_test_1_resample_", "test_1_resample_", "test_1_"];%"indi2500_12_"];
-runNames = ["Free-run", "RS", "OT"];
+runNames = ["Free-run", "RS", "RS", "OT"];
 
 
 dt = 2*0.2;
 
 plotDists = 1;
-plotTimes = [10 50 100];
+plotTimes = [20 50 70];
 
 signLevel = 0.05;
 
@@ -24,7 +24,8 @@ dims = dims_and_int(1:2);
 assimInt = dims_and_int(3);
 
 if plotDists > 0
-    figure, tiledlayout(length(plotTimes), 1+length(runs),'TileSpacing','compact')
+    figure('Renderer', 'painters', 'Position', [50 50 850 500]);
+    tiledlayout(length(plotTimes), 1+length(runs),'TileSpacing','compact')
 end
 
 for i=1:length(runs)
@@ -94,7 +95,7 @@ for i=1:length(runs)
         rmsEnkf(j,i) = rms(devi);
         
         if plotDists > 0
-            clims = [0 100];%[0 3];%[0 100];
+            clims = [0 20];%[0 3];%[0 100];
             ppp = find(j*dt == plotTimes);
             if numel(ppp)>0
                 j
@@ -103,31 +104,38 @@ for i=1:length(runs)
                     nexttile((ppp-1)*(1+length(runs))+1)
                     dField = reshape(dens_twin(:,j), dims(1), dims(2));
                     %dField = reshape(Xfld_twin(:,j), dims(1), dims(2));
-                    pcolor(dField'), shading flat, colorbar, axis image
+                    pcolor(dField'), shading flat, axis image
+                    if ppp==1
+                        cbr = colorbar, 
+                        cbr.Layout.Tile = 'East'; 
+                    end
                     clim(clims)
                     %scatter(x_twin(:,i), y_twin(:,j), 1, Ei_twin(:,i), 'filled');
                     %xlim([0 20]), ylim([0 15]), colorbar, clim([0 3])
                     title("Twin (t="+string(plotTimes(ppp))+")")
+                    axis off, box on
                 end
                 nexttile((ppp-1)*(1+length(runs))+1+i)
                 dField = reshape(dens_e(:,j), dims(1), dims(2));
                 %dField = reshape(Xfld_e(:,j), dims(1), dims(2));
-                pcolor(dField'), shading flat, colorbar, , axis image
+                pcolor(dField'), shading flat, axis image
                 clim(clims)
                 %scatter(x_1(:,i), y_1(:,i), 1, Ei1(:,j), 'filled');
                 %xlim([0 20]), ylim([0 15]), colorbar, clim([0 3])
                 title(runNames(i)+" (t="+string(plotTimes(ppp))+")")
+                axis off, box on
             end
         end
     end
 end
+exportgraphics(gcf, 'density_snaps.eps')
 %%
 figure('Renderer', 'painters', 'Position', [50 50 1000 650]);
 tld = tiledlayout(4,3, "TileSpacing","compact");
 nexttile, plot(ttt, rmsDens), title('Density RMS'), grid on, hold on
 xlabel('Time')
-lgd = legend([runNames]), lgd.Location = 'NorthEast'
-
+lgd = legend([runNames])%, lgd.Location = 'NorthEast'
+lgd.Layout.Tile = 'East'; 
 
 nexttile, plot(ttt, rmsE), title('Energy RMS'), grid on
 xlabel('Time')
@@ -221,7 +229,16 @@ function markSignificance(h, runs, values, signLevel)
         pval = aov.stats.pValue(1);
         if pval < signLevel
             bar_height = h.YData(i)*1.075;%+ 0.15* h.YPositiveDelta(i);
-            text(h.XData(i)+0.1, (bar_height), '*','FontSize',22);
+            text(h.XData(i)+0.1, (bar_height), '*','FontSize',18);
+        end
+    end
+
+    for i=3:length(runs)
+        aov = anova(values(:,[2 i]));
+        pval = aov.stats.pValue(1);
+        if pval < signLevel
+            bar_height = h.YData(i)*1.075;%+ 0.15* h.YPositiveDelta(i);
+            text(h.XData(i)+0.15, (bar_height), ' ^o','FontSize',16);
         end
     end
 

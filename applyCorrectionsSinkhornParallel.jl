@@ -48,7 +48,7 @@ function applyCorrectionsSinkhornParallel(correctedField, origField, dims, dxy, 
             steps=2,
         );
         atol=2e-2,#1e-2,#1e-6,
-        maxiter=2_000) #50_000)
+        maxiter=10_000) #2_000) #50_000)
 
     # println(size(ot))
     # for i=1:size(ot,3)

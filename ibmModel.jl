@@ -81,8 +81,8 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
         end
     end
 
-    v_x_new = tend_x + 0.25*randn()
-    v_y_new = tend_y + 0.25*randn()
+    v_x_new = tend_x + 0.5*randn()
+    v_y_new = tend_y + 0.5*randn()
 
 
     # Add random perturbations to the speed components:

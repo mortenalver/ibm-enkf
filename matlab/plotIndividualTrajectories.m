@@ -2,7 +2,7 @@
 %direc = "C:/temp/";
 direc = "D:/work/ibm-enkf/test1/"
 %runs = ["test5000_resample_", "test5000_"];
-runs3 = ["d_test_1_resample_", "test_1_resample_", "test_1_resample_"]
+runs3 = ["d_perturb_5_resample_", "perturb_6_resample_", "perturb_6_"]
 %runs3 = ["d_indi2500_12_resample_", "indi2500_12_resample_", "indi2500_12_"];
 %runs = ["test11_resample_"];
 %runnames = ["Resampling"];
@@ -19,7 +19,7 @@ ttt = dt*(1:size(x_twin,2));
 
 %%
 runs = runs3(2:3);
-runnames = ["Resampling", "Optimal transport"];
+runnames = ["RS", "OT"];
 
 nToPlot = 3;
 idx = randperm(size(x_twin,1), nToPlot);
@@ -35,17 +35,17 @@ tiledlayout(2,1+length(runs),'TileSpacing','compact')
 
 for i=1:length(idx)  
     nexttile(1)
-    hold on, plot(x_twin(idx(i),iFrom:end), y_twin(idx(i),iFrom:end),'Color',colo(i,:),...
+    hold on, plot(x_twin(idx(i),iFrom:(end-1)), y_twin(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
     plot(x_twin(idx(i),iFrom), y_twin(idx(i),iFrom),'.','MarkerSize',15,'Color',colo(i,:))
     axis image, grid on, xlim(lims(1,:)), ylim(lims(2,:))
     title('Position (Free-run)')
-    xlabel('x position'), ylabel('y position')
+    xlabel('x position'), ylabel('y position'), box on
 
     nexttile(length(runs)+1+1)
-    hold on, plot(ttt(iFrom:end)-ttt(iFrom), E_twin(idx(i),iFrom:end),'Color',colo(i,:),...
+    hold on, plot(ttt(iFrom:(end-1))-ttt(iFrom), E_twin(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
-    grid on, xlabel('Time')
+    grid on, xlabel('Time'), box on
     title('Energy (Free-run)')
 end
 
@@ -57,18 +57,18 @@ for modI = 1:length(runs)
     N_e = dlmread(prefix+"e1N.csv");
     for i=1:length(idx)  
         nexttile(1+modI)
-        hold on, plot(x_e(idx(i),iFrom:end), y_e(idx(i),iFrom:end),'Color',colo(i,:),...
+        hold on, plot(x_e(idx(i),iFrom:(end-1)), y_e(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
             'LineStyle', '-','Marker','.','MarkerSize',4)
         plot(x_e(idx(i),iFrom), y_e(idx(i),iFrom),'.','MarkerSize',15,'Color',colo(i,:))
         axis image, grid on, xlim(lims(1,:)), ylim(lims(2,:))
         title("Position ("+runnames(modI)+")");
-        xlabel('x position'), ylabel('y position')
+        xlabel('x position'), ylabel('y position'), box on
 
         nexttile(length(runs)+2+modI), grid on
-        hold on, plot(ttt(iFrom:end)-ttt(iFrom), E_e(idx(i),iFrom:end),'Color',colo(i,:),...
+        hold on, plot(ttt(iFrom:(end-1))-ttt(iFrom), E_e(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
         grid on, xlabel('Time')
-        title("Energy ("+runnames(modI)+")");
+        title("Energy ("+runnames(modI)+")"), box on
         
     end
 end
@@ -77,7 +77,7 @@ exportgraphics(gcf, 'ind_traj.eps')
 
 %%
 runs = runs3(2:3);
-runnames = ["Resampling", "Optimal transport"];
+runnames = ["RS", "OT"];
 %varToAnalyze = "E"; titleLabel = "Energy";
 %varToAnalyze = "X"; titleLabel = "X position";
 varsToAnalyze = ["X", "Y", "E"]; 
@@ -155,11 +155,11 @@ exportgraphics(gcf, 'frequencies.eps')
 %%
 % Find trajectories starting at almost the same position, and compare:
 runs = runs3([1 3]);
-runnames = ["Free-run", "Optimal transport"];
+runnames = ["Free-run", "OT"];
 %compareRun = 1;
     
 nToPlot = 3;
-nPartsPer = 2;
+nPartsPer = 3;
 
 co = colororder;
 
@@ -172,7 +172,7 @@ for compareRun=1:2
         idx = idxAll(iii);
         
         fromI = 1;
-        toI = 40;%55;
+        toI = 80;%55;
         initPos = [x_twin(idx,fromI) y_twin(idx,fromI)];
         prefix = strcat(direc, runs(compareRun));
         X_e = dlmread(prefix+"e1X.csv");

@@ -41,6 +41,6 @@ mutable struct AssimSettings
     measVar::Float64
     perturbMeasurements::Bool
     localizationDist::Float64
-
-    AssimSettings() = new(false,2,10,false,true,false,false,1000,false,1,1.0,false,4.0)
+    foodLimit::Float64
+    AssimSettings() = new(false,2,10,false,true,false,false,1000,false,1,1.0,false,4.0,4.0)
 end

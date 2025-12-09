@@ -1,5 +1,5 @@
 
-prefix = 'D:/work/ibm-enkf/test1/perturb_3_resample_';
+prefix = 'D:/work/ibm-enkf/test1/perturb_5_';
 %prefix = 'C:/temp/perturb_1_resample_';
 %prefix = 'C:/temp/d_gtwin_perturb_1_resample_';
 %prefix = 'C:/temp/d_gtwin_indi2500_13_resample_';
