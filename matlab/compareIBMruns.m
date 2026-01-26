@@ -1,20 +1,27 @@
 %direc = "C:/temp/";
-direc = "D:/work/ibm-enkf/test1/"
+%direc = "D:/work/ibm-enkf/test1/"
+direc = "D:/work/ibm-enkf/test2/"
 
 %runs = ["d_test11_resample_", "test12_resample_", "test12_"];
 
 % runs = ["d_test2500_resample_", "test2500_resample_", "test2500_3_resample_", "test2500_4_resample_", "test2500_5_resample_"]%, "test5000_"];
 % runNames = ["Free-run", "Resample", "Resample 3", "Resample 4", "Resample 5"]%, "Optimal transport"];
 
-runs = ["d_perturb_5_resample_", "perturb_6_resample_", "perturb_7_resample_", "perturb_6_"];
-%runs = ["d_test_1_resample_", "test_1_resample_", "test_1_"];%"indi2500_12_"];
-runNames = ["Free-run", "RS", "RS", "OT"];
+%runs = ["d_perturb_5_resample_", "perturb_7_resample_", "perturb_assimint6_resample_", "perturb_7_", "perturb_assimint6_"];
+%runs = ["d_run_2026_4_resample_", "run_2026_4_resample_", "run_2026_4_", "run_2026_4_no_uv_upd__", "run_2026_5_small_uv_upd__"];
+%runs = ["d_run_2026_6_no_uv_upd__resample_", "run_2026_6_no_uv_upd__resample_","run_2026_7_no_uv_upd__","run_2026_8_no_uv_upd__"];
+%runs = ["d_higheps_1_resample_", "higheps_1_resample_", "higheps_2_"];
+runs = ["d_loc6.5_uv_upd__resample_", "loc6.5_uv_upd__resample_","loc100_uv_upd__resample_", "loc4.5_uv_upd__", "higheps_noloc_uv_upd__"];%"loc1.5_uv_upd__resample_", "loc_1_no_uv_upd__resample_"];
+runNames = ["Free-run", "RS", "RS100", "OT", "OT noloc"];%"RS 1.5", "RS 2.5", %, "OT 2"];%, "OT 3"];%, "OT rapid"];
+
+% runs = ["d_perturb_5_resample_", "perturb_6_resample_", "perturb_7_resample_", "perturb_6_", "perturb_7_"];
+% runNames = ["Free-run", "RS", "RS", "OT", "OT"];
 
 
-dt = 2*0.2;
+dt = 1*0.2;
 
 plotDists = 1;
-plotTimes = [20 50 70];
+plotTimes = [20 50 90];
 
 signLevel = 0.05;
 
@@ -59,6 +66,7 @@ for i=1:length(runs)
         rmsEnkfIBM = zeros(size(dens_twin,2), length(runs));
         stdDens = zeros(size(dens_twin,2), length(runs));
         corrDens = zeros(size(dens_twin,2), length(runs));
+        %corrDens2 = zeros(size(dens_twin,2), length(runs));
         corrE = zeros(size(dens_twin,2), length(runs));
         corrX = zeros(size(dens_twin,2), length(runs));
     end
@@ -68,26 +76,30 @@ for i=1:length(runs)
         devi = dens_twin(:,j) - dens_e(:,j);
         rmsDens(j,i) = rms(devi);
         stdDens(j,i) = mean(densStd_e(:,j));
-        corrval = corrcoef([dens_twin(:,j) dens_e(:,j)]);
-        if ~isnan(corrval(1,2))
-            corrDens(j,i) = corrval(1,2);
-        end
+        % corrval = corrcoef([dens_twin(:,j) dens_e(:,j)]);
+        % if ~isnan(corrval(1,2))
+        %     corrDens(j,i) = corrval(1,2);
+        % end
+        corrDens(j,i) = smoothedCorrelation(dens_twin(:,j), dens_e(:,j), dims, 0);
+        
         weightedE_twin = E_twin(:,j).*dens_twin(:,j);
         weightedE_e = E_e(:,j).*dens_e(:,j);
         %devi = E_twin(:,j) - E_e(:,j);
         devi = weightedE_twin - weightedE_e;
         rmsE(j,i) = rms(devi);
-        corrval = corrcoef([weightedE_twin weightedE_e]);
-        if ~isnan(corrval(1,2))
-            corrE(j,i) = corrval(1,2);
-        end
-
+        % corrval = corrcoef([weightedE_twin weightedE_e]);
+        % if ~isnan(corrval(1,2))
+        %     corrE(j,i) = corrval(1,2);
+        % end
+        corrE(j,i) = smoothedCorrelation(weightedE_twin, weightedE_e, dims, 0);
+        
         devi = Xfld_twin(:,j) - Xfld_e(:,j);
         rmsX(j,i) = rms(devi);
-        corrval = corrcoef([Xfld_twin(:,j) Xfld_e(:,j)]);
-        if ~isnan(corrval(1,2))
-            corrX(j,i) = corrval(1,2);
-        end
+        % corrval = corrcoef([Xfld_twin(:,j) Xfld_e(:,j)]);
+        % if ~isnan(corrval(1,2))
+        %     corrX(j,i) = corrval(1,2);
+        % end
+        corrX(j,i) = smoothedCorrelation(Xfld_twin(:,j), Xfld_e(:,j), dims, 0);
 
         devi = dens_e(:,j) - enkfField(:,j);
         rmsEnkfIBM(j,i) = rms(devi);

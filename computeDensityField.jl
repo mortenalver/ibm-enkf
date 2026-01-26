@@ -53,7 +53,7 @@ function computeAverageEnergyField(indsArray, xlim, ylim, dxy, eFillVal)
             fieldE[ix, iy] = fieldE[ix, iy] + indsArray[i].n * indsArray[i].E
         end
     end
-    # Then divide the fummed energy field by the density field, leaving 0 in cells
+    # Then divide the summed energy field by the density field, leaving 0 in cells
     # with no individuals:
     fieldE = fieldE ./ fieldN
     for i=1:length(fieldE)

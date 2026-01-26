@@ -1,19 +1,21 @@
 
 %direc = "C:/temp/";
-direc = "D:/work/ibm-enkf/test1/"
+direc = "D:/work/ibm-enkf/test2/"
 %runs = ["test5000_resample_", "test5000_"];
-runs3 = ["d_perturb_5_resample_", "perturb_6_resample_", "perturb_6_"]
+%runs3 = ["d_perturb_7_resample_", "perturb_7_resample_", "perturb_7_"]
+%runs3 = ["d_run_2026_4_resample_", "run_2026_4_resample_", "run_2026_5_fuzzy_no_uv_upd__"]
+runs3 = ["d_loc6.5_uv_upd__resample_", "noloc_uv_upd__resample_","loc6.5_uv_upd__"];
 %runs3 = ["d_indi2500_12_resample_", "indi2500_12_resample_", "indi2500_12_"];
 %runs = ["test11_resample_"];
 %runnames = ["Resampling"];
 % Read twin and ensemble densities:
-prefix = strcat(direc, runs(1))
+prefix = strcat(direc, runs3(1))
 x_twin = dlmread(prefix+"twinX.csv");
 y_twin = dlmread(prefix+"twinY.csv");
 E_twin = dlmread(prefix+"twinE.csv");
 N_twin = dlmread(prefix+"twinN.csv");
 
-dt = 2*0.2;
+dt = 1*0.2;
 ttt = dt*(1:size(x_twin,2));
 
 
@@ -39,14 +41,14 @@ for i=1:length(idx)
         'LineStyle', '-','Marker','.','MarkerSize',4)
     plot(x_twin(idx(i),iFrom), y_twin(idx(i),iFrom),'.','MarkerSize',15,'Color',colo(i,:))
     axis image, grid on, xlim(lims(1,:)), ylim(lims(2,:))
-    title('Position (Free-run)')
+    title('Position (Twin)')
     xlabel('x position'), ylabel('y position'), box on
 
     nexttile(length(runs)+1+1)
     hold on, plot(ttt(iFrom:(end-1))-ttt(iFrom), E_twin(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
     grid on, xlabel('Time'), box on
-    title('Energy (Free-run)')
+    title('Energy (Twin)')
 end
 
 for modI = 1:length(runs)
@@ -56,16 +58,23 @@ for modI = 1:length(runs)
     E_e = dlmread(prefix+"e1E.csv");
     N_e = dlmread(prefix+"e1N.csv");
     for i=1:length(idx)  
+
+        % Find closest particle to idx(i):
+        initPos = [x_twin(idx(i),iFrom) y_twin(idx(i),iFrom)];
+        initPosE = [x_e(:,iFrom) y_e(:,iFrom)];
+        distSq = (initPos(1)-initPosE(:,1)).^2 + (initPos(2)-initPosE(:,2)).^2;
+        [minDist, idx2] = mink(distSq, 1);
+
         nexttile(1+modI)
-        hold on, plot(x_e(idx(i),iFrom:(end-1)), y_e(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
+        hold on, plot(x_e(idx2,iFrom:(end-1)), y_e(idx2,iFrom:(end-1)),'Color',colo(i,:),...
             'LineStyle', '-','Marker','.','MarkerSize',4)
-        plot(x_e(idx(i),iFrom), y_e(idx(i),iFrom),'.','MarkerSize',15,'Color',colo(i,:))
+        plot(x_e(idx2,iFrom), y_e(idx2,iFrom),'.','MarkerSize',15,'Color',colo(i,:))
         axis image, grid on, xlim(lims(1,:)), ylim(lims(2,:))
         title("Position ("+runnames(modI)+")");
         xlabel('x position'), ylabel('y position'), box on
 
         nexttile(length(runs)+2+modI), grid on
-        hold on, plot(ttt(iFrom:(end-1))-ttt(iFrom), E_e(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
+        hold on, plot(ttt(iFrom:(end-1))-ttt(iFrom), E_e(idx2,iFrom:(end-1)),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
         grid on, xlabel('Time')
         title("Energy ("+runnames(modI)+")"), box on
@@ -74,6 +83,40 @@ for modI = 1:length(runs)
 end
 
 exportgraphics(gcf, 'ind_traj.eps')
+
+%%
+% Analyse step lengths
+runs = runs3([3]);
+runnames = ["Free-run", "OT"];
+binEdges = 0:0.01:3; %0:25;
+binC = binEdges(1:end-1) + 0.5*diff(binEdges);
+counts = zeros(length(binC), length(runs));
+for modI = 1:length(runs)
+    prefix = strcat(direc, runs(modI));
+    X_e = dlmread(prefix+"e1X.csv");
+    Y_e = dlmread(prefix+"e1Y.csv");
+
+    stepLen = zeros((size(X_e,2)-1)*size(X_e,1),1);
+    piv = 0;
+    for i=2:size(X_e,2)
+        if mod(i,assimInt) == 0%assimInt-1
+            for j=1:size(X_e,1)
+                piv = piv+1;
+                stepVec = [X_e(j,i)-X_e(j,i-1) Y_e(j,i)-Y_e(j,i-1)];
+                stepLen(piv) = sqrt(stepVec(1)^2 + stepVec(2)^2);
+            end
+        end
+    end
+    stepLen = stepLen(1:piv);
+    hc = histcounts(stepLen, binEdges);
+    counts(:,modI) = hc'/sum(hc);
+end
+figure, plot(binC, counts,'. -'), grid on
+xlabel('Step size (m)'), ylabel('Relative frequency')
+if length(runs) > 1
+    legend(runnames)
+end
+exportgraphics(gcf, 'OT_stepsizes.eps')
 
 %%
 runs = runs3(2:3);
@@ -103,6 +146,7 @@ for varI = 1:length(varsToAnalyze)
         else
             perioSum = perioSum + psd_t1;
         end
+
         % if rand(1) > 0.975
         %     nexttile(1), plot(t1), hold on
         %     nexttile(length(runs)+1+1), semilogy(w1, psd_t1), hold on
@@ -125,6 +169,7 @@ for varI = 1:length(varsToAnalyze)
             else
                 perioSum = perioSum + psd_t1;
             end
+
             % if rand(1) > 0.975
             %     nexttile(1+modI), plot(t1), hold on
             %     nexttile(1+length(runs)+1+modI), semilogy(w1, psd_t1), hold on
@@ -167,6 +212,9 @@ figure('Renderer', 'painters', 'Position', [50 50 1000 550]);
 tiledlayout(2,nToPlot,'TileSpacing','tight')
 idxAll = randperm(size(x_twin,1), nToPlot);
 for compareRun=1:2
+    prefix = strcat(direc, runs(compareRun));
+    X_e = dlmread(prefix+"e1X.csv");
+    Y_e = dlmread(prefix+"e1Y.csv");
     for iii=1:nToPlot
         % Choose one random trajectory:
         idx = idxAll(iii);
@@ -174,9 +222,7 @@ for compareRun=1:2
         fromI = 1;
         toI = 80;%55;
         initPos = [x_twin(idx,fromI) y_twin(idx,fromI)];
-        prefix = strcat(direc, runs(compareRun));
-        X_e = dlmread(prefix+"e1X.csv");
-        Y_e = dlmread(prefix+"e1Y.csv");
+        
         initPosE = [X_e(:,fromI) Y_e(:,fromI)];
         distSq = (initPos(1)-initPosE(:,1)).^2 + (initPos(2)-initPosE(:,2)).^2;
         [minDist, idx2] = mink(distSq, 40);
@@ -235,3 +281,72 @@ end
 % nexttile(3), xlim(xl), ylim(yl), nexttile(6), xlim(xl), ylim(yl), 
 
 exportgraphics(gcf, 'ind_traj_pos0.eps')
+
+
+%%
+% Go through n random individuals from twin. For each, choose the closest
+% individual in other simulations, and compare how far away from the twin
+% they end after a certain time. Make statistics over all tested
+% individuals.
+
+runs = runs3([1 3]);
+runnames = ["Free-run",  "OT"];
+nInds = 5000;
+fromIAll = [1 30 60]*(1/dt);
+toIAll = [30 60 90]*(1/dt);%55;
+titles = ["0-30 d", "30-60 d", "60-90 d"];
+
+idxAll = randperm(size(x_twin,1), nInds)
+
+figure('Renderer', 'painters', 'Position', [50 50 950 350]);
+tiledlayout(1, 3,'TileSpacing','compact')
+
+
+for interva = 1:length(fromIAll)
+
+    fromI = fromIAll(interva);
+    toI = toIAll(interva);
+    endDists = zeros(nInds, length(runs));
+    
+    for compareRun=1:length(runs)
+        prefix = strcat(direc, runs(compareRun));
+        X_e = dlmread(prefix+"e1X.csv");
+        Y_e = dlmread(prefix+"e1Y.csv");
+        for iii=1:nInds
+            % Choose one trajectory:
+            idx = idxAll(iii);
+            % Find init position:
+            initPos = [x_twin(idx,fromI) y_twin(idx,fromI)];
+            % Find the closest init position from this run:
+            initPosE = [X_e(:,fromI) Y_e(:,fromI)];
+            distSq = (initPos(1)-initPosE(:,1)).^2 + (initPos(2)-initPosE(:,2)).^2;
+            [minDist, idx2] = min(distSq);
+            if sqrt(minDist) < 0.5 % Only do this comparison if the init positions are reasonably close:
+                endDists(iii,compareRun) = sqrt((X_e(idx2, toI)-x_twin(idx,toI)).^2 + (Y_e(idx2, toI)-y_twin(idx,toI)).^2) - sqrt(minDist);
+            else
+                endDists(iii,compareRun) = NaN;
+            end
+        end
+    
+    end
+    
+    edges = 0:0.25:15;
+    hcAll = zeros(length(edges)-1, length(runs));
+    for i=1:length(runs)
+        [hc] = histcounts(endDists(:,i), edges);
+        hcAll(:,i) = hc;
+    end
+    
+    %figure%,nexttile, boxchart(endDists)
+    nexttile, 
+    plot(edges(1:end-1) + 0.5*diff(edges), hcAll./sum(hcAll,1),'. -') %normaliser per kolonne
+    grid on, 
+    if interva==1
+        lgd = legend(runnames)
+        lgd.Layout.Tile = 'East'; 
+    end
+    xlabel('Distance deviation (m)'), ylabel('Relative frequency')
+    title(titles(interva))
+end
+
+exportgraphics(gcf, 'ind_traj_dev.eps')

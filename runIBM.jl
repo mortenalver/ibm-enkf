@@ -69,12 +69,12 @@ end
 function main(setDryrun, setResample, recordingTwin)
 
     # Basic settings:
-    simnamePrefix = "perturb_7" 
+    simnamePrefix = "higheps_noloc_uv_upd_" 
     useRecordedTwin = true
-    recordedTwinPrefix = storageDir*"d_gtwin_perturb_1_resample_"
+    recordedTwinPrefix = storageDir*"d_gtwin2_resample_"
     dt = 0.2 # Time step
-    t_end = 79.8 # Simulation end time
-    storageInterval = 2
+    t_end = 99.8#119.8 # Simulation end time
+    storageInterval = 1
 
     # Assimilation settings:
     as = AssimSettings()
@@ -83,10 +83,10 @@ function main(setDryrun, setResample, recordingTwin)
 
     #recordingTwin = true # True to record new twin:
     if recordingTwin
-        t_end = 80.0
+        t_end = 120.0
         useRecordedTwin = false
         storageInterval = 1
-        simnamePrefix = "gtwin_perturb_1"
+        simnamePrefix = "gtwin2"
         as.N = 2
     end
     plotTimeStep = 40
@@ -129,8 +129,9 @@ function main(setDryrun, setResample, recordingTwin)
     as.measVar = 0.25^2.0 # Squared measurement standard deviation
     # Not relevant when using ESTFK: 
     as.perturbMeasurements = true # True to perturb measurement matrix bin analysis step
-    as.localizationDist = 2.5 #3.0 # Localization distance
-
+    as.localizationDist = 6.5 #3.0 # Localization distance
+    as.fuzzySinkhornMoves = false # If true, all movements are made with random +- half a cell distance
+    
     # Modify sim name according to run mode:
     simname = simnamePrefix*"_"
     if as.dryRun
@@ -152,7 +153,7 @@ function main(setDryrun, setResample, recordingTwin)
     nstoretimes = round(Int, ntimes / storageInterval)
     storeCount = 0
     storeXYE_twin = fill(0.0, 7, ms.nInd, nstoretimes)
-    storeXYE_e1 = fill(0.0, 5, ms.nInd, nstoretimes)
+    storeXYE_e1 = fill(0.0, 7, ms.nInd, nstoretimes)
     eFillval = 0.0
 
     println("dt=", dt, ", t_end=",t_end,", steps=",ntimes)
@@ -212,6 +213,7 @@ function main(setDryrun, setResample, recordingTwin)
     storeEnKF_field = fill(0.0, length(densityField), nstoretimes)
     storeStd_field = fill(0.0, length(densityField), nstoretimes)
     storeX_e = fill(0.0, length(densityField), nstoretimes)
+
     
     # Initialize food field on same dimensions as the density field:
     X_fld = fill(initFoodLevel, size(densityField,1), size(densityField,2),Ndim)
@@ -313,6 +315,8 @@ function main(setDryrun, setResample, recordingTwin)
                 else
                     storeXYE_e1[5,indI,storeCount] = NaN
                 end
+                storeXYE_e1[6,indI,storeCount] = ind.v_x
+                storeXYE_e1[7,indI,storeCount] = ind.v_y
             end
 
             # Store density field for twin:
@@ -326,6 +330,7 @@ function main(setDryrun, setResample, recordingTwin)
 
             # Store latest EnKF field:
             storeEnKF_field[:,storeCount] = reshape(enkfField, length(enkfField),1)
+
 
             # Store X field for twin:
             storeX_twin[:,storeCount] = reshape(X_fld[:,:,Ndim], length(densityField), 1)
@@ -400,6 +405,9 @@ function main(setDryrun, setResample, recordingTwin)
     writedlm(prefix*"e1E.csv", storeXYE_e1[3,:,:], ',')
     writedlm(prefix*"e1N.csv", storeXYE_e1[4,:,:], ',')
     writedlm(prefix*"e1Food.csv", storeXYE_e1[5,:,:], ',')
+    writedlm(prefix*"e1VX.csv", storeXYE_e1[6,:,:], ',')
+    writedlm(prefix*"e1VY.csv", storeXYE_e1[7,:,:], ',')
+
     writedlm(prefix*"eDens.csv", storeDens_e, ',')
     writedlm(prefix*"eDensStd.csv", storeStd_field, ',')
     writedlm(prefix*"eEnergy.csv", storeEnergy_e, ',')

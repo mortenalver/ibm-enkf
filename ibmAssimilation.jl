@@ -148,7 +148,11 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
     #println("densEnsemble: "*string(size(densEnsemble)))
     #println("X_upd: "*string(size(X_upd)))
 
-    X_upd = max.(0.0, real(X_upd))
+    # Make sure all values are real:
+    X_upd = real(X_upd)
+    # Cut off any negative values for density and food (but not for speeds, which can be negative):
+    X_upd[1:nPos,:] = max.(0.0, X_upd[1:nPos,:])
+    X_upd[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos,:] = max.(0.0, X_upd[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos,:])
 
     #A = densEnsemble - (1/N)*densEnsemble*ones(N,1)*ones(1,N)
     #stdA = std(A, dims=2)
@@ -212,7 +216,8 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
             
             # Move individuals according to transport plan:
             #println("Updating member "*string(i)*" based on sinkhorn transport.")
-            updArray, origField = applyCorrectionsFromSinkhorn(copy(indsArray), ot[:,:,i], origField, dimensions, xlim, ylim, dxy, doWrite)
+            updArray, origField = applyCorrectionsFromSinkhorn(copy(indsArray), ot[:,:,i], origField, dimensions, xlim, ylim, dxy,
+                                                               as.fuzzySinkhornMoves, doWrite)
             
             # Make size adjustments to match target densities:
             #println("Adjusting sizes")
@@ -225,7 +230,7 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
     end
     
     # If activated, apply corrections for speed:
-    if as.speedsInStateVec
+    if as.speedsInStateVec #&& as.resampleAll
 
         Threads.@threads for ensI=1:as.N
             # Get corrected speed field for this ensemble member:
@@ -238,8 +243,14 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot)
                 ix = Int(floor((indsArray[i].x - xlim[1])/dxy))
                 iy = Int(floor((indsArray[i].y - ylim[1])/dxy))
                 if ix>=1 && iy>=1 && ix<=size(fieldU,1) && iy<=size(fieldU,2)
-                    indsArray[i].v_x = fieldU[ix,iy]
-                    indsArray[i].v_y = fieldV[ix,iy]
+                    #if as.resampleAll
+                        indsArray[i].v_x = fieldU[ix,iy]
+                        indsArray[i].v_y = fieldV[ix,iy]
+                    #else
+                    #    upFrac = 0.2
+                    #    indsArray[i].v_x = (1.0-upFrac)*indsArray[i].v_x + upFrac*fieldU[ix,iy]
+                    #    indsArray[i].v_y = (1.0-upFrac)*indsArray[i].v_y + upFrac*fieldV[ix,iy]
+                    #end
                 end
             end
         end

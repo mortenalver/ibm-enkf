@@ -1,5 +1,6 @@
 
-prefix = 'D:/work/ibm-enkf/test1/perturb_5_';
+%prefix = 'D:/work/ibm-enkf/test1/perturb_5_';
+prefix = 'D:/work/ibm-enkf/test1/run_2026_3_resample_';
 %prefix = 'C:/temp/perturb_1_resample_';
 %prefix = 'C:/temp/d_gtwin_perturb_1_resample_';
 %prefix = 'C:/temp/d_gtwin_indi2500_13_resample_';
@@ -14,7 +15,7 @@ dims = dlmread([prefix 'fieldDims.csv']);
 
 % Read twin values:
 
-dt = 2*0.2;
+dt = 1*0.2;
 if length(dims) > 3
     dt = dims(4);
 end

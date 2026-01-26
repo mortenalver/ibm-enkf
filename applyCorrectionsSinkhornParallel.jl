@@ -40,7 +40,7 @@ function applyCorrectionsSinkhornParallel(correctedField, origField, dims, dxy, 
     aa = copy(a)
     println(size(aa))
     # Call sinkhorn algorithm:
-    eps = 1.2 # 2.0
+    eps = 2.5*1.2 # 2.0
     ot = sinkhorn(aa, b, C, eps, 
         SinkhornEpsilonScaling(
             SinkhornGibbs();
@@ -66,7 +66,7 @@ function applyCorrectionsSinkhornParallel(correctedField, origField, dims, dxy, 
 end
 
 
-function applyCorrectionsFromSinkhorn(indsArray, ot, orig, dims, xlim, ylim, dxy, doWrite)
+function applyCorrectionsFromSinkhorn(indsArray, ot, orig, dims, xlim, ylim, dxy, fuzzyMoves, doWrite)
 
     if ~isnan(ot[1,1])
         cind = CartesianIndices((dims[1], dims[2]))
@@ -108,6 +108,10 @@ function applyCorrectionsFromSinkhorn(indsArray, ot, orig, dims, xlim, ylim, dxy
                     # Update position:
                     indsArray[i].x += dxy*(cellI-ix)
                     indsArray[i].y += dxy*(cellJ-iy)
+                    if fuzzyMoves
+                        indsArray[i].x += dxy*(rand()-0.5)
+                        indsArray[i].y += dxy*(rand()-0.5)
+                    end
                 end
             end
 
