@@ -40,7 +40,7 @@ function applyCorrectionsSinkhornParallel(correctedField, origField, dims, dxy, 
     aa = copy(a)
     println(size(aa))
     # Call sinkhorn algorithm:
-    eps = 2.5*1.2 # 2.0
+    eps = 1.2 # 2.0
     ot = sinkhorn(aa, b, C, eps, 
         SinkhornEpsilonScaling(
             SinkhornGibbs();
