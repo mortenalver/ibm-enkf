@@ -17,6 +17,7 @@ using LinearAlgebra
 using DelimitedFiles
 using OptimalTransport
 using DataAssim
+using Random 
 
 include("settings.jl")
 include("ibmModel.jl")
@@ -67,11 +68,12 @@ if ~isdir(storageDir)
 end
 
 function main(setDryrun, setResample, recordingTwin)
+    
 
     # Basic settings:
-    simnamePrefix = "higheps_noloc_uv_upd_" 
+    simnamePrefix = "twintest_" 
     useRecordedTwin = true
-    recordedTwinPrefix = storageDir*"d_gtwin2_resample_"
+    recordedTwinPrefix = storageDir*"d_r1twin_resample_"
     dt = 0.2 # Time step
     t_end = 99.8#119.8 # Simulation end time
     storageInterval = 1
@@ -83,11 +85,14 @@ function main(setDryrun, setResample, recordingTwin)
 
     #recordingTwin = true # True to record new twin:
     if recordingTwin
+        # Set random seed:
+        Random.seed!(246235)
+
         t_end = 120.0
         useRecordedTwin = false
         storageInterval = 1
-        simnamePrefix = "gtwin2"
-        as.N = 2
+        simnamePrefix = "r1twin"
+        as.N = 1
     end
     plotTimeStep = 40
     initFoodLevel = 1.0
@@ -268,7 +273,7 @@ function main(setDryrun, setResample, recordingTwin)
         end
         println("Average interactions per ind: "*string(totInteractions/as.N))
 
-        if mod(tstep, as.assimInterval) == 0
+        if (mod(tstep, as.assimInterval) == 0) && !recordingTwin
             println("Assim at tstep=", tstep)
             
             doPlot = tstep==plotTimeStep
