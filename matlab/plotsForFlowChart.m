@@ -11,12 +11,12 @@ y_twin = dlmread(prefix+"forplotting_resample_twinY.csv");
 dens_twin = dlmread(prefix+"forplotting_resample_twinDens.csv");
 
 figure,tiledlayout('flow')
-
+dx = 0.5;
 idx = 40; % Time step to plot
 lims = [0 50];
 xlims = [dx 12];
 ylims = [dx 15+dx]
-dx = 0.5;
+
 
 nexttile, scatter(x_e1(:,idx-1), y_e1(:,idx-1), 0.5), axis image, xlim([0 20]), ylim([0 15]), title('E1 pre')
 xlim(xlims), ylim(ylims)

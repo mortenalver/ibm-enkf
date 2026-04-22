@@ -86,8 +86,7 @@ function applyCorrectionsFromSinkhorn(indsArray, ot, orig, dims, xlim, ylim, dxy
                 permu = sortperm(toVals, rev=true)
                 
                 # Find relative probabilities of the first 8 target cells:
-                nInclude = 20
-                relProb = toVals[permu[1:nInclude]] ./ sum(toVals[permu[1:nInclude]])
+                relProb = toVals[permu[1:8]] ./ sum(toVals[permu[1:8]])
                 cumProb = cumsum(relProb)
                 #println("First to cells: "*string(permu[1:8]))
                 #println("relProb: "*string(relProb))

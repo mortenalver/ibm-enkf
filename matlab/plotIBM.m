@@ -1,7 +1,10 @@
 
 %prefix = 'D:/work/ibm-enkf/test1/perturb_5_';
-prefix = 'D:/work/ibm-enkf/test1/run_2026_3_resample_';
-%prefix = 'C:/temp/perturb_1_resample_';
+%prefix = 'D:/work/ibm-enkf/test1/run_2026_3_resample_';
+%prefix = 'D:/work/ibm-enkf/test2/loc6.5_uv_upd__';
+%prefix = 'D:/work/ibm-enkf/r1run/twintest__resample_';
+%prefix = 'C:/temp/twintest2__resample_';
+prefix = 'C:/temp/anamorph__resample_';
 %prefix = 'C:/temp/d_gtwin_perturb_1_resample_';
 %prefix = 'C:/temp/d_gtwin_indi2500_13_resample_';
 %prefix = 'C:/temp/indi2500_10_resample_';
@@ -19,7 +22,7 @@ dt = 1*0.2;
 if length(dims) > 3
     dt = dims(4);
 end
-speedup = 2;
+speedup = 3;
 
 x_twin = dlmread([prefix 'twinX.csv']);
 y_twin = dlmread([prefix 'twinY.csv']);
@@ -48,12 +51,12 @@ Xfld_e = dlmread([prefix 'eXfld.csv']);
 %%
 
 
-v = VideoWriter('anim.avi');
-v.FrameRate = 8; % Default 30
+v = VideoWriter('anim','MPEG-4');
+v.FrameRate = 4; % Default 30
 open(v);
 
-figure('Renderer', 'painters', 'Position', [10 50 1400 800])
-ncol = 4;
+figure('Renderer', 'painters', 'Position', [10 50 1100 800])
+ncol = 3;
 tiledlayout(2,ncol)
 
 if animate > 0
@@ -85,11 +88,11 @@ for i=range
     clim([0 3])
     title('Individuals (ensemble member 1)')
     
-    nexttile(4)
-    dFieldT = reshape(Xfld_e(:,i), dims(1), dims(2));
-    pcolor(dFieldT'), shading flat, colorbar
-    clim([0 2])
-    title('Food field (ensemble)')
+    % nexttile(4)
+    % dFieldT = reshape(Xfld_e(:,i), dims(1), dims(2));
+    % pcolor(dFieldT'), shading flat, colorbar
+    % clim([0 2])
+    % title('Food field (ensemble)')
 
     % nexttile(ncol+4)
     % dFieldT = reshape(Xfld_twin(:,i), dims(1), dims(2));
@@ -97,11 +100,11 @@ for i=range
     % clim([0 2])
     % title('Food field (twin)')
 
-    nexttile(ncol+4)
-    dFieldT = reshape(densStd_e(:,i), dims(1), dims(2));
-    pcolor(dFieldT'), shading flat, colorbar
-    clim([0 10])
-    title('Density standard dev. (ensemble)')
+    % nexttile(ncol+4)
+    % dFieldT = reshape(densStd_e(:,i), dims(1), dims(2));
+    % pcolor(dFieldT'), shading flat, colorbar
+    % clim([0 10])
+    % title('Density standard dev. (ensemble)')
 
     nexttile(2)
     dFieldT = reshape(dens_twin(:,i), dims(1), dims(2));

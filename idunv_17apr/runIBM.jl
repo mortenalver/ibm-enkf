@@ -30,7 +30,6 @@ include("applyCorrectionsResample.jl")
 include("applyCorrectionsSinkhorn.jl")
 include("applyCorrectionsSinkhornParallel.jl")
 include("ibmAssimilation.jl")
-include("anamorphic.jl")
 
 function readCurrentField(filename)
     ds = NCDataset(filename,"r")
@@ -72,30 +71,30 @@ function main(setDryrun, setResample, recordingTwin)
     
 
     # Basic settings:
-    simnamePrefix = "test_" 
+    simnamePrefix = "twintest2_" 
     useRecordedTwin = true
-    recordedTwinPrefix = storageDir*"d_twin1234_resample_"
+    recordedTwinPrefix = storageDir*"d_r2twin_resample_"
     dt = 0.2 # Time step
-    t_end = 35.2#99.8#119.8 # Simulation end time
+    t_end = 150.2 #99.8#119.8 # Simulation end time
     storageInterval = 1
 
     # Assimilation settings:
     as = AssimSettings()
-    as.N = 200#300# 100 # Number of ensemble members.
+    as.N = 300# 100 # Number of ensemble members.
     
 
     #recordingTwin = true # True to record new twin:
     if recordingTwin
         # Set random seed to get deterministic outcome. Note: Threads.nthreads must be set to 1!
-        Random.seed!(1234)
+        Random.seed!(246235)
 
-        t_end = 200.0
+        t_end = 120.0
         useRecordedTwin = false
         storageInterval = 1
-        simnamePrefix = "twin1234"
+        simnamePrefix = "r1twin"
         as.N = 1
     end
-    plotTimeStep = 20
+    plotTimeStep = 40
     initFoodLevel = 1.0
     
     # Simulation parameters:
@@ -126,17 +125,13 @@ function main(setDryrun, setResample, recordingTwin)
     as.dryRun = setDryrun # If true, the assimilation process will be run but changes will not be applied.
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 10 # Time steps between each assimilation procedure
-    as.anamorphicTransform = false # If true, transform density values to near-gaussian distributions before sending to EnKF
     as.speedsInStateVec = true # If true, include mean speed components per grid cell in the state vector.
     as.foodInStateVec = true # If true, include food field in the state vector
     as.measureFood = true # If true, include measurements of food
     as.regularMeasurements = true # If true, place measurements regularly at a given measSpacing
     as.measSpacing = 3 # If regular measurements, sets the measurement spacing
     as.nmeas = 1200 #2*800 # Number of randomly distributed meaurements 
-    as.measVar = 0.25^2.0 #0.25^2.0 # Squared measurement standard deviation
-    #if as.anamorphicTransform
-    #    as.measVar = 0.05^2.0
-    #end
+    as.measVar = 0.25^2.0 # Squared measurement standard deviation
     # Not relevant when using ESTFK: 
     as.perturbMeasurements = true # True to perturb measurement matrix bin analysis step
     as.localizationDist = 6.5 #3.0 # Localization distance
@@ -181,9 +176,13 @@ function main(setDryrun, setResample, recordingTwin)
 
     if useRecordedTwin
         rTwinX = readdlm(recordedTwinPrefix*"twinX.csv", ',')
+        println(size(rTwinX))
         rTwinY = readdlm(recordedTwinPrefix*"twinY.csv", ',')
+        println(size(rTwinY))
         rTwinVX = readdlm(recordedTwinPrefix*"twinVX.csv", ',')
+        println(size(rTwinVX))
         rTwinVY = readdlm(recordedTwinPrefix*"twinVY.csv", ',')
+        println(size(rTwinVY))
         rTwinE = readdlm(recordedTwinPrefix*"twinE.csv", ',')
         rTwinN = readdlm(recordedTwinPrefix*"twinN.csv", ',')
         rTwinXfld = readdlm(recordedTwinPrefix*"twinXfld.csv", ',')
@@ -276,13 +275,13 @@ function main(setDryrun, setResample, recordingTwin)
             end
 
         end
-        #println("Average interactions per ind: "*string(totInteractions/as.N))
+        println("Average interactions per ind: "*string(totInteractions/as.N))
 
         if (mod(tstep, as.assimInterval) == 0) && !recordingTwin
             println("Assim at tstep=", tstep)
             
             doPlot = tstep==plotTimeStep
-            updatedEnsemble, X_fld_upd, enkfField = ibmAssimilation(as, deepcopy(ensemble), copy(X_fld), xlim, ylim, dxy, doPlot, t)
+            updatedEnsemble, X_fld_upd, enkfField = ibmAssimilation(as, deepcopy(ensemble), copy(X_fld), xlim, ylim, dxy, doPlot)
             
             if !as.dryRun
                 ensemble = updatedEnsemble

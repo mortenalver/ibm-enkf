@@ -1,7 +1,9 @@
 %direc = "C:/temp/";
 %direc = "D:/work/ibm-enkf/test1/"
-direc = "D:/work/ibm-enkf/test2/"
-
+%direc = "D:/work/ibm-enkf/test2/"
+%direc = ["D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/"];
+direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
+%direc = ["D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/"];
 %runs = ["d_test11_resample_", "test12_resample_", "test12_"];
 
 % runs = ["d_test2500_resample_", "test2500_resample_", "test2500_3_resample_", "test2500_4_resample_", "test2500_5_resample_"]%, "test5000_"];
@@ -11,22 +13,34 @@ direc = "D:/work/ibm-enkf/test2/"
 %runs = ["d_run_2026_4_resample_", "run_2026_4_resample_", "run_2026_4_", "run_2026_4_no_uv_upd__", "run_2026_5_small_uv_upd__"];
 %runs = ["d_run_2026_6_no_uv_upd__resample_", "run_2026_6_no_uv_upd__resample_","run_2026_7_no_uv_upd__","run_2026_8_no_uv_upd__"];
 %runs = ["d_higheps_1_resample_", "higheps_1_resample_", "higheps_2_"];
-runs = ["d_loc6.5_uv_upd__resample_", "loc6.5_uv_upd__resample_","loc100_uv_upd__resample_", "loc4.5_uv_upd__", "higheps_noloc_uv_upd__"];%"loc1.5_uv_upd__resample_", "loc_1_no_uv_upd__resample_"];
-runNames = ["Free-run", "RS", "RS100", "OT", "OT noloc"];%"RS 1.5", "RS 2.5", %, "OT 2"];%, "OT 3"];%, "OT rapid"];
+%runs = ["d_loc6.5_uv_upd__resample_", "loc6.5_uv_upd__resample_","loc6.5_uv_upd__"];%"loc1.5_uv_upd__resample_", "loc_1_no_uv_upd__resample_"];
 
-% runs = ["d_perturb_5_resample_", "perturb_6_resample_", "perturb_7_resample_", "perturb_6_", "perturb_7_"];
-% runNames = ["Free-run", "RS", "RS", "OT", "OT"];
+%runNames = ["Free-run", "RS", "OT"];%"RS 1.5", "RS 2.5", %, "OT 2"];%, "OT 3"];%, "OT rapid"];
+%runs = ["d_twintest2__resample_", "twintest2__resample_", "twintest2__"];
 
+%runs = ["d_r1run__resample_", "r1run2__resample_";];%"twintest2__resample_"];%, "twintest2__resample_"];
+%runNames = ["Free-run", "RS"];%, "RS 20"];
+
+%runs = ["d_test1__resample_", "test1__resample_", "test_nouv__resample_", "test_nospeed__resample_"];%, ...
+    %"anamorph__resample_"];
+%runNames = ["Free-run", "RS", "RS no food", "RS no speed"];%, "RS GAT"];%, "RS 20"];
+runs = ["d_test1__resample_", "test1__resample_", "testr__resample_"];
+runNames = ["Free-run", "RS", "RS lower R"];%, "RS 20"];
+
+
+markSignificances = 0;
+
+plotEndTime = 10;%100;
 
 dt = 1*0.2;
 
 plotDists = 1;
-plotTimes = [20 50 90];
+plotTimes = [10 20 35];
 
 signLevel = 0.05;
 
 
-dims_and_int = dlmread(direc+runs(1)+"fieldDims.csv");
+dims_and_int = dlmread(direc(1)+runs(1)+"fieldDims.csv");
 dims = dims_and_int(1:2);
 assimInt = dims_and_int(3);
 
@@ -36,7 +50,7 @@ if plotDists > 0
 end
 
 for i=1:length(runs)
-    prefix = strcat(direc, runs(i))
+    prefix = strcat(direc(i), runs(i))
 
     % Read twin and ensemble densities:
     dens_twin = dlmread(strcat(prefix, "twinDens.csv"));
@@ -74,37 +88,37 @@ for i=1:length(runs)
     for j=1:size(dens_twin,2)
         
         devi = dens_twin(:,j) - dens_e(:,j);
-        rmsDens(j,i) = rms(devi);
+        rmsDens(j,i) = myRms(devi,dims);
         stdDens(j,i) = mean(densStd_e(:,j));
-        % corrval = corrcoef([dens_twin(:,j) dens_e(:,j)]);
-        % if ~isnan(corrval(1,2))
-        %     corrDens(j,i) = corrval(1,2);
-        % end
-        corrDens(j,i) = smoothedCorrelation(dens_twin(:,j), dens_e(:,j), dims, 0);
+        corrval = corrcoef([dens_twin(:,j) dens_e(:,j)]);
+        if ~isnan(corrval(1,2))
+            corrDens(j,i) = corrval(1,2);
+        end
+        % corrDens(j,i) = smoothedCorrelation(dens_twin(:,j), dens_e(:,j), dims, 0);
         
         weightedE_twin = E_twin(:,j).*dens_twin(:,j);
         weightedE_e = E_e(:,j).*dens_e(:,j);
         %devi = E_twin(:,j) - E_e(:,j);
         devi = weightedE_twin - weightedE_e;
-        rmsE(j,i) = rms(devi);
-        % corrval = corrcoef([weightedE_twin weightedE_e]);
-        % if ~isnan(corrval(1,2))
-        %     corrE(j,i) = corrval(1,2);
-        % end
-        corrE(j,i) = smoothedCorrelation(weightedE_twin, weightedE_e, dims, 0);
+        rmsE(j,i) = myRms(devi,dims);
+        corrval = corrcoef([weightedE_twin weightedE_e]);
+        if ~isnan(corrval(1,2))
+            corrE(j,i) = corrval(1,2);
+        end
+        % corrE(j,i) = smoothedCorrelation(weightedE_twin, weightedE_e, dims, 0);
         
         devi = Xfld_twin(:,j) - Xfld_e(:,j);
-        rmsX(j,i) = rms(devi);
-        % corrval = corrcoef([Xfld_twin(:,j) Xfld_e(:,j)]);
-        % if ~isnan(corrval(1,2))
-        %     corrX(j,i) = corrval(1,2);
-        % end
-        corrX(j,i) = smoothedCorrelation(Xfld_twin(:,j), Xfld_e(:,j), dims, 0);
+        rmsX(j,i) = myRms(devi,dims);
+        corrval = corrcoef([Xfld_twin(:,j) Xfld_e(:,j)]);
+        if ~isnan(corrval(1,2))
+            corrX(j,i) = corrval(1,2);
+        end
+        %corrX(j,i) = smoothedCorrelation(Xfld_twin(:,j), Xfld_e(:,j), dims, 0);
 
         devi = dens_e(:,j) - enkfField(:,j);
-        rmsEnkfIBM(j,i) = rms(devi);
+        rmsEnkfIBM(j,i) = myRms(devi,dims);
         devi = dens_twin(:,j) - enkfField(:,j);
-        rmsEnkf(j,i) = rms(devi);
+        rmsEnkf(j,i) = myRms(devi, dims);
         
         if plotDists > 0
             clims = [0 20];%[0 3];%[0 100];
@@ -142,13 +156,16 @@ for i=1:length(runs)
 end
 exportgraphics(gcf, 'density_snaps.eps')
 %%
+% Set ttt in case the other matrices have grown larger:
+ttt = dt*(1:size(rmsDens,1));
+
 figure('Renderer', 'painters', 'Position', [50 50 1000 650]);
 tld = tiledlayout(4,3, "TileSpacing","compact");
 nexttile, plot(ttt, rmsDens), title('Density RMS'), grid on, hold on
 xlabel('Time')
 lgd = legend([runNames])%, lgd.Location = 'NorthEast'
 lgd.Layout.Tile = 'East'; 
-
+fixylim(gca, plotEndTime);
 nexttile, plot(ttt, rmsE), title('Energy RMS'), grid on
 xlabel('Time')
 
@@ -157,7 +174,9 @@ xlabel('Time')
 
 nexttile, bar(mean(rmsDens,1)), title('Mean density RMS'), xticklabels(runNames), grid on
 hold on, h = errorbar(1:length(runs), mean(rmsDens,1), std(rmsDens,0,1),'Color','k','LineStyle','none','LineWidth',1);
-markSignificance(h, runs, rmsDens, signLevel)
+if markSignificances
+    markSignificance(h, runs, rmsDens, signLevel)
+end
 % for i=2:length(runs)
 %     aov = anova(rmsDens(:,[1 i]));
 %     pval = aov.stats.pValue(1);
@@ -170,11 +189,15 @@ markSignificance(h, runs, rmsDens, signLevel)
 
 nexttile, bar(mean(rmsE,1)), title('Mean energy RMS'), xticklabels(runNames), grid on
 hold on, h = errorbar(1:length(runs), mean(rmsE,1), std(rmsE,0,1),'Color','k','LineStyle','none','LineWidth',1);
-markSignificance(h, runs, rmsE, signLevel)
+if markSignificances
+    markSignificance(h, runs, rmsE, signLevel)
+end
 
 nexttile, bar(mean(rmsX,1)), title('Mean food field RMS'), xticklabels(runNames), grid on
 hold on, h = errorbar(1:length(runs), mean(rmsX,1), std(rmsX,0,1),'Color','k','LineStyle','none','LineWidth',1);
-markSignificance(h, runs, rmsX, signLevel)
+if markSignificances
+    markSignificance(h, runs, rmsX, signLevel)
+end
 
 nexttile, plot(ttt, corrDens), title('Density correlation'), grid on, hold on
 xlabel('Time')
@@ -188,17 +211,23 @@ xlabel('Time')
 
 nexttile, bar(mean(corrDens,1)), title('Mean density correlation'), xticklabels(runNames), grid on
 hold on, h = errorbar(1:length(runs), mean(corrDens,1), std(corrDens,0,1),'Color','k','LineStyle','none','LineWidth',1);
-markSignificance(h, runs, corrDens, signLevel)
+if markSignificances
+    markSignificance(h, runs, corrDens, signLevel)
+end
 ylim([0 1])
 
 nexttile, bar(mean(corrE,1)), title('Mean energy correlation'), xticklabels(runNames), grid on
 hold on, h = errorbar(1:length(runs), mean(corrE,1), std(corrE,0,1),'Color','k','LineStyle','none','LineWidth',1);
-markSignificance(h, runs, corrE, signLevel)
+if markSignificances
+    markSignificance(h, runs, corrE, signLevel)
+end
 ylim([0 1])
 
 nexttile, bar(mean(corrX,1)), title('Mean food field correlation'), xticklabels(runNames), grid on
 hold on, h = errorbar(1:length(runs), mean(corrX,1), std(corrX,0,1),'Color','k','LineStyle','none','LineWidth',1);
-markSignificance(h, runs, corrX, signLevel)
+if markSignificances
+    markSignificance(h, runs, corrX, signLevel)
+end
 ylim([0 1])
 
 
@@ -215,14 +244,18 @@ tiledlayout(1,2, "TileSpacing","compact")
 
 nexttile, bar(mean(rmsEnkf(assimInt:assimInt:end,2:end))), grid on %, legend(runNames,'Location','southeast')
 hold on, h = errorbar(1:length(inclR), mean(rmsEnkf(assimInt:assimInt:end,inclR),1), std(rmsEnkf(assimInt:assimInt:end,inclR),0,1),'Color','k','LineStyle','none','LineWidth',1);
-markSignificance(h, runs(inclR), rmsEnkf(assimInt:assimInt:end,inclR), signLevel)
+if markSignificances
+    markSignificance(h, runs(inclR), rmsEnkf(assimInt:assimInt:end,inclR), signLevel)
+end
 xticklabels(runNames(inclR)), grid on
 title('EnKF accuracy'), grid on
 yl = ylim;
 
 nexttile, bar(mean(rmsEnkfIBM(assimInt:assimInt:end,inclR)))
 hold on, h = errorbar(1:length(inclR), mean(rmsEnkfIBM(assimInt:assimInt:end,inclR),1), std(rmsEnkfIBM(assimInt:assimInt:end,inclR),0,1),'Color','k','LineStyle','none','LineWidth',1);
-markSignificance(h, runs(inclR), rmsEnkfIBM(assimInt:assimInt:end,inclR), signLevel)
+if markSignificances
+    markSignificance(h, runs(inclR), rmsEnkfIBM(assimInt:assimInt:end,inclR), signLevel)
+end
 xticklabels(runNames(inclR)), grid on
 ylim(yl)
 title('IBM update accuracy'), grid on
@@ -252,6 +285,14 @@ function markSignificance(h, runs, values, signLevel)
             bar_height = h.YData(i)*1.075;%+ 0.15* h.YPositiveDelta(i);
             text(h.XData(i)+0.15, (bar_height), ' ^o','FontSize',16);
         end
+    end
+
+end
+
+function fixylim(gca, plotEndTime)
+    yl = ylim;
+    if yl(2) > plotEndTime
+        ylim([0 plotEndTime]);
     end
 
 end

@@ -20,14 +20,17 @@ ttt = dt*(1:size(x_twin,2));
 
 
 %%
-runs = runs3(2:3);
-runnames = ["RS", "OT"];
+runs = runs3(1:3);
+runnames = ["Free-run", "RS", "OT"];
 
 nToPlot = 3;
 idx = randperm(size(x_twin,1), nToPlot);
-iFrom = 25;
+iFrom = 1;
+iTo = 250;
+
 
 lims = [0 20; 0 15];
+e_lim = [0 3.5];
 colo = colororder;
 gcol = [0.7 0.7 0.7];
 gcol2 = [0.3 0.3 0.3];
@@ -37,7 +40,7 @@ tiledlayout(2,1+length(runs),'TileSpacing','compact')
 
 for i=1:length(idx)  
     nexttile(1)
-    hold on, plot(x_twin(idx(i),iFrom:(end-1)), y_twin(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
+    hold on, plot(x_twin(idx(i),iFrom:iTo), y_twin(idx(i),iFrom:iTo),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
     plot(x_twin(idx(i),iFrom), y_twin(idx(i),iFrom),'.','MarkerSize',15,'Color',colo(i,:))
     axis image, grid on, xlim(lims(1,:)), ylim(lims(2,:))
@@ -45,9 +48,9 @@ for i=1:length(idx)
     xlabel('x position'), ylabel('y position'), box on
 
     nexttile(length(runs)+1+1)
-    hold on, plot(ttt(iFrom:(end-1))-ttt(iFrom), E_twin(idx(i),iFrom:(end-1)),'Color',colo(i,:),...
+    hold on, plot(ttt(iFrom:iTo)-ttt(iFrom), E_twin(idx(i),iFrom:iTo),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
-    grid on, xlabel('Time'), box on
+    grid on, xlabel('Time'), box on, ylim(e_lim)
     title('Energy (Twin)')
 end
 
@@ -66,17 +69,17 @@ for modI = 1:length(runs)
         [minDist, idx2] = mink(distSq, 1);
 
         nexttile(1+modI)
-        hold on, plot(x_e(idx2,iFrom:(end-1)), y_e(idx2,iFrom:(end-1)),'Color',colo(i,:),...
-            'LineStyle', '-','Marker','.','MarkerSize',4)
+        hold on, plot(x_e(idx2,iFrom:iTo), y_e(idx2,iFrom:iTo),'Color',colo(i,:),...
+            'LineStyle', ':','Marker','.','MarkerSize',4)
         plot(x_e(idx2,iFrom), y_e(idx2,iFrom),'.','MarkerSize',15,'Color',colo(i,:))
         axis image, grid on, xlim(lims(1,:)), ylim(lims(2,:))
         title("Position ("+runnames(modI)+")");
         xlabel('x position'), ylabel('y position'), box on
 
         nexttile(length(runs)+2+modI), grid on
-        hold on, plot(ttt(iFrom:(end-1))-ttt(iFrom), E_e(idx2,iFrom:(end-1)),'Color',colo(i,:),...
+        hold on, plot(ttt(iFrom:iTo)-ttt(iFrom), E_e(idx2,iFrom:iTo),'Color',colo(i,:),...
         'LineStyle', '-','Marker','.','MarkerSize',4)
-        grid on, xlabel('Time')
+        grid on, xlabel('Time'), ylim(e_lim)
         title("Energy ("+runnames(modI)+")"), box on
         
     end

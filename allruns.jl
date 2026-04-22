@@ -1,6 +1,6 @@
 
 include("runIBM.jl")
-#recordtwin()
-dryrun()
-resamplerun()
-normrun()
+recordtwin()
+#dryrun()
+#resamplerun()
+#normrun()

@@ -43,6 +43,5 @@ mutable struct AssimSettings
     localizationDist::Float64
     foodLimit::Float64
     fuzzySinkhornMoves::Bool
-    anamorphicTransform::Bool
-    AssimSettings() = new(false,2,10,false,true,false,false,1000,false,1,1.0,false,4.0,4.0,false,false)
+    AssimSettings() = new(false,2,10,false,true,false,false,1000,false,1,1.0,false,4.0,4.0,false)
 end
