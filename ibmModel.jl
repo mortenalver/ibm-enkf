@@ -217,7 +217,7 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
     X_fld = X_fld + dt.*X_pert 
 
     # Add food everywhere to a maximum of 4:
-    X_fld = X_fld + fill(dt*0.01, size(X_fld,1), size(X_fld,2))
+    X_fld = X_fld + fill(dt*ms.X_a, size(X_fld,1), size(X_fld,2))
     X_fld = min.(X_fld, 4.0)
     return X_fld, totInteractions/length(indsArray)
 end

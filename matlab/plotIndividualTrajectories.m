@@ -1,10 +1,13 @@
 
 %direc = "C:/temp/";
-direc = "D:/work/ibm-enkf/test2/"
+%direc = "D:/work/ibm-enkf/test2/"
+direc = "E:/work/ibm-enkf/r1run_123/";
 %runs = ["test5000_resample_", "test5000_"];
 %runs3 = ["d_perturb_7_resample_", "perturb_7_resample_", "perturb_7_"]
 %runs3 = ["d_run_2026_4_resample_", "run_2026_4_resample_", "run_2026_5_fuzzy_no_uv_upd__"]
-runs3 = ["d_loc6.5_uv_upd__resample_", "noloc_uv_upd__resample_","loc6.5_uv_upd__"];
+%runs3 = ["d_loc6.5_uv_upd__resample_", "noloc_uv_upd__resample_","loc6.5_uv_upd__"];
+runs3 = ["d_r2test123__resample_", "r2test123__resample_", "r2test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+
 %runs3 = ["d_indi2500_12_resample_", "indi2500_12_resample_", "indi2500_12_"];
 %runs = ["test11_resample_"];
 %runnames = ["Resampling"];

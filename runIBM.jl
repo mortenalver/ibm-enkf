@@ -68,15 +68,17 @@ if ~isdir(storageDir)
     storageDir = "./"
 end
 
+totalTimeUsed = 0
+
 function main(setDryrun, setResample, recordingTwin)
     
-
+    global totalTimeUsed = 0
     # Basic settings:
-    simnamePrefix = "r1test123_" 
+    simnamePrefix = "normal123_" 
     useRecordedTwin = true
     recordedTwinPrefix = storageDir*"d_twin123_resample_"
     dt = 0.2 # Time step
-    t_end = 100.2#99.8#119.8 # Simulation end time
+    t_end = 35.2#99.8#119.8 # Simulation end time
     storageInterval = 1
 
     # Assimilation settings:
@@ -103,6 +105,7 @@ function main(setDryrun, setResample, recordingTwin)
     ms.xMax = 20
     ms.yMax = 15
     ms.k_X = 2.5 # Strength of motion towards food gradient.
+    ms.X_a = 0.01 # Global addition rate of food.
     ms.indsInteraction = true # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
     ms.indsAlignThresh = 0.3 # Distance threshold for individual alignment.
     ms.indsRepulseThresh = 0.08 # Distance threshold for individual repulsion.
@@ -423,6 +426,8 @@ function main(setDryrun, setResample, recordingTwin)
     writedlm(prefix*"eEnergy.csv", storeEnergy_e, ',')
     writedlm(prefix*"eXfld.csv", storeX_e, ',')
     
+
+    println("Total time used for update step: "*string(totalTimeUsed))
 end
 
 

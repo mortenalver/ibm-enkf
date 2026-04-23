@@ -17,10 +17,12 @@ direc = ["E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/", "E:/work/
 %runs = ["d_twintest2__resample_", "twintest2__resample_", "twintest2__"];
 
 %runs = ["d_r1run__resample_", "r1run2__resample_", "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
-runs = ["d_r1test123__resample_", "r1test123__resample_", "r1test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+%runs = ["d_r1test123__resample_", "r1test123__resample_", "r1test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+%runs = ["d_r2test123__resample_", "r2test123__resample_", "r2test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+runs = ["d_r2test123__resample_", "r3test123__resample_", "r3test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
 runNames = ["Free-run", "RS", "OT"];%, "RS 20"];
 
-%runs = ["d_test1__resample_", "test1__resample_", "test_nouv__resample_", "test_nospeed__resample_"];%, ...
+%runs = ["d_normal123__resample_", "normal123__resample_", "nofood123__resample_", "nospeed123__resample_"];%, ...
     %"anamorph__resample_"];
 %runNames = ["Free-run", "RS", "RS no food", "RS no speed"];%, "RS GAT"];%, "RS 20"];
 %runs = ["d_test1__resample_", "test1__resample_", "shortloc__resample_"];
@@ -120,15 +122,15 @@ for i=1:length(runs)
         rmsEnkf(j,i) = myRms(devi, dims);
         
         if plotDists > 0
-            clims = [0 2];%[0 3];%[0 100];
+            clims = [0 20];%[0 3];%[0 100];
             ppp = find(j*dt == plotTimes);
             if numel(ppp)>0
                 j
                 if i==1
                     % Plot twin:
                     nexttile((ppp-1)*(1+length(runs))+1)
-                    %dField = reshape(dens_twin(:,j), dims(1), dims(2));
-                    dField = reshape(Xfld_twin(:,j), dims(1), dims(2));
+                    dField = reshape(dens_twin(:,j), dims(1), dims(2));
+                    %dField = reshape(Xfld_twin(:,j), dims(1), dims(2));
                     pcolor(dField'), shading flat, axis image
                     if ppp==1
                         cbr = colorbar, 
@@ -141,8 +143,8 @@ for i=1:length(runs)
                     axis off, box on
                 end
                 nexttile((ppp-1)*(1+length(runs))+1+i)
-                %dField = reshape(dens_e(:,j), dims(1), dims(2));
-                dField = reshape(Xfld_e(:,j), dims(1), dims(2));
+                dField = reshape(dens_e(:,j), dims(1), dims(2));
+                %dField = reshape(Xfld_e(:,j), dims(1), dims(2));
                 pcolor(dField'), shading flat, axis image
                 clim(clims)
                 %scatter(x_1(:,i), y_1(:,i), 1, Ei1(:,j), 'filled');
@@ -157,7 +159,7 @@ exportgraphics(gcf, 'density_snaps.eps')
 %%
 % Set ttt in case the other matrices have grown larger:
 ttt = dt*(1:size(rmsDens,1));
-inclI = ttt <= plotEndTime;
+inclI = ttt > 10 & ttt <= plotEndTime;
 
 figure('Renderer', 'painters', 'Position', [50 50 1000 650]);
 tld = tiledlayout(4,3, "TileSpacing","compact");
@@ -285,31 +287,69 @@ function markSignificance(h, runs, values, signLevel)
     N = size(values,1);
     for i=2:length(runs)
         
-        [acfX, lagsX] = autocorr(values(:,1), 'NumLags', N-1);
-        [acfY, lagsY] = autocorr(values(:,i), 'NumLags', N-1);
-        plot(lagsX, acfX), hold on
-        % 3. Calculate Effective Sample Size (N*)
-        % Using the formula: N / sum(rhoX * rhoY)
-        % NOTE: For many, you might sum up to a specific lag limit (e.g., Pyper & Peterman)
-        prodAcf = acfX .* acfY;
-        effectiveN = N / sum(prodAcf)
-
-        aov = anova(values(:,[1 i]));
-        pval = aov.stats.pValue(1);
+        pval = myAnova(values(:,[1 i]));        
+        %aov = anova(values(:,[1 i]));
+        %pval = aov.stats.pValue(1);
         if pval < signLevel
             bar_height = h.YData(i)*1.075;%+ 0.15* h.YPositiveDelta(i);
             text(h.XData(i)+0.1, (bar_height), '*','FontSize',18);
         end
     end
 
-    for i=3:length(runs)
-        aov = anova(values(:,[2 i]));
-        pval = aov.stats.pValue(1);
-        if pval < signLevel
-            bar_height = h.YData(i)*1.075;%+ 0.15* h.YPositiveDelta(i);
-            text(h.XData(i)+0.15, (bar_height), ' ^o','FontSize',16);
-        end
+    % for i=3:length(runs)
+    %     pval = myAnova(values(:,[2 i]));       
+    %     %pval_orig = myAnova(values(:,[2 i]),0)        
+    %     %aov = anova(values(:,[2 i]))
+    %     %pval = aov.stats.pValue(1)
+    %     if pval < signLevel
+    %         bar_height = h.YData(i)*1.075;%+ 0.15* h.YPositiveDelta(i);
+    %         text(h.XData(i)+0.15, (bar_height), ' ^o','FontSize',16);
+    %     end
+    % end
+
+
+    
+end
+
+function p = myAnova(values, reduceDF)
+    if nargin < 2
+        reduceDF = 1;
     end
 
+    n = size(values,1);
+    k = size(values,2);
+    
+    % 3. Calculate Effective Sample Size (N*)
+    [acfX, lagsX] = autocorr(values(:,1), 'NumLags', n-1);
+    [acfY, lagsY] = autocorr(values(:,2), 'NumLags', n-1);
+    % Using the formula: N / sum(rhoX * rhoY)
+    % NOTE: For many, you might sum up to a specific lag limit (e.g., Pyper & Peterman)
+    N_lag = n%round(n/5);
+    prodAcf = acfX(1:N_lag) .* acfY(1:N_lag);
+    if reduceDF
+        effectiveN = n / (1 + 2*sum(prodAcf))
+    else
+        effectiveN = n;
+    end
+    % Calculate means:
+    means = mean(values, 1);
+    meansAll = mean(means);
+    % if (abs(means(1)-means(2))/meansAll) < 0.1
+    %     1+1;
+    % end
+    % Calculate SSR:
+    SSR = n*sum((means - meansAll).^2);
+    % Calculate SSE:
+    SSE = sum(sum((values-means).^2));
+    % Calculate SST:
+    SST = SSR + SSE;
+    % Calcuate ANOVA values:
+    df_treatment = k-1;
+    df_error = effectiveN-k;
+    MS_treatment = SST/df_treatment;
+    MS_error = SSE/df_error;
+    F = MS_treatment/MS_error
+    % Calculate p-value (upper tail)
+    p = 1 - fcdf(F, df_treatment, df_error)
 end
 

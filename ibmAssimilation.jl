@@ -118,106 +118,85 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot, t)
     Rvec = Rval*ones(Float64, size(M,1))
     R = Diagonal(Rvec)
     
-    
+    X_upd = enKF(densEnsemble, M, xloc, y, Rval, Rvec, as) # Get corrected ensemble matrix X_upd
 
+    # if !as.anamorphicTransform
+    #     X_upd = enKF(densEnsemble, M, xloc, y, Rval, Rvec, as) # Get corrected ensemble matrix X_upd
+    # else
+    #     densEnsemble_trf = copy(densEnsemble)
+    #     # Initialize transform:
+    #     trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp = initTransform(vec(densEnsemble_trf[1:nPos,:]), 150)
+    #     println("trf_x: "*string(trf_x))
+    #     println("trf_xl: "*string(trf_xl))
+    #     println("trf_xp: "*string(trf_xp))
+    #     println("trf_yl: "*string(trf_yl))
+    #     println("trf_yp: "*string(trf_yp))
 
-    #X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
+    #     # Transform density values:
+    #     for i=1:as.N
+    #         trfVal = transform(densEnsemble_trf[1:nPos,i], trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp)
+    #         densEnsemble_trf[1:nPos,i] = trfVal
+    #     end
 
-    #selectObs(i) = exp.(-((x_states[i] .- xmeas).^2 .+ (y_states[i] .- ymeas).^2)./(as.localizationDist.^2))
-    #vv = Vector(1:convert(Float64, size(densEnsemble,1)))
+    #     # Transform measurement series (only density values):
+    #     y_trf = y
+    #     if as.measureFood
+    #         n_meas = length(y)
+    #         n_trf = Int(round(n_meas/2))
+    #         y_trf[1:n_trf] = transform(y_trf[1:n_trf], trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp)
+    #     else
+    #         y_trf[1:n_meas] = transform(y_trf[1:n_meas], trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp)
+    #     end
+    #     #println(size(Rval))
+    #     for i=1:n_meas
+    #         Rvec[i] = 1.0^2.0 # Reduce value since we are transforming these variables
+    #     end
+    #     X_upd = enKF(densEnsemble_trf, M, xloc, y, Rval, Rvec, as) # Get corrected ensemble matrix X_upd
 
-    #println(size(densEnsemble))
-    #println(size(M))
-    #println(size(y))
-    #println(size(R))
-    #println(size(vv))
-    #println(size(M*densEnsemble))
-    #testloc = selectObs(210)
-    #println(string(minimum(testloc))*"   "*string(maximum(testloc)))
-    # function $method(Xf,HXf,y,R,H; debug = false, tolerance=1e-10)
-    #X_upd, X_upd_mean = DataAssim.ESTKF(densEnsemble, M*densEnsemble, y, R, M)
-    #X_upd, X_upd_mean = DataAssim.local_ESTKF(densEnsemble, M, y, Rvec, vv, selectObs)
-    #meanField2 = reshape(X_upd_mean, dimensions[1], dimensions[2])
+    #     X_upd_nontr = copy(X_upd)
+    #     # Iverse transform of density values:
+    #     for i=1:as.N
+    #         trfVal = invTransform(X_upd[1:nPos,i], trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp)
+    #         X_upd[1:nPos,i] = trfVal
+    #     end
 
-    if !as.anamorphicTransform
-        X_upd = enKF(densEnsemble, M, xloc, y, Rval, Rvec, as) # Get corrected ensemble matrix X_upd
-    else
-        densEnsemble_trf = copy(densEnsemble)
-        # Initialize transform:
-        trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp = initTransform(vec(densEnsemble_trf[1:nPos,:]), 150)
-        println("trf_x: "*string(trf_x))
-        println("trf_xl: "*string(trf_xl))
-        println("trf_xp: "*string(trf_xp))
-        println("trf_yl: "*string(trf_yl))
-        println("trf_yp: "*string(trf_yp))
-
-        # Transform density values:
-        for i=1:as.N
-            trfVal = transform(densEnsemble_trf[1:nPos,i], trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp)
-            densEnsemble_trf[1:nPos,i] = trfVal
-        end
-
-        # Transform measurement series (only density values):
-        y_trf = y
-        if as.measureFood
-            n_meas = length(y)
-            n_trf = Int(round(n_meas/2))
-            y_trf[1:n_trf] = transform(y_trf[1:n_trf], trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp)
-        else
-            y_trf[1:n_meas] = transform(y_trf[1:n_meas], trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp)
-        end
-        #println(size(Rval))
-        for i=1:n_meas
-            Rvec[i] = 1.0^2.0 # Reduce value since we are transforming these variables
-        end
-        X_upd = enKF(densEnsemble_trf, M, xloc, y, Rval, Rvec, as) # Get corrected ensemble matrix X_upd
-
-        X_upd_nontr = copy(X_upd)
-        # Iverse transform of density values:
-        for i=1:as.N
-            trfVal = invTransform(X_upd[1:nPos,i], trf_x, trf_y, trf_xl, trf_xp, trf_yl, trf_yp)
-            X_upd[1:nPos,i] = trfVal
-        end
-
-        #trOrig = reshape(densEnsemble_trf[1:nPos,1], dimensions[1], dimensions[2])
-        #trUpd = reshape(X_upd_nontr[1:nPos,1], dimensions[1], dimensions[2])
-        #invtrUpd = reshape(X_upd[1:nPos,1], dimensions[1], dimensions[2])
-        #display(plot(heatmap(trOrig, title="Orig transformed"), heatmap(trUpd,title="Corrected"),
-        #    heatmap(invtrUpd,title="Corrected inv-transformed")))
-    end
-    #println("densEnsemble: "*string(size(densEnsemble)))
-    #println("X_upd: "*string(size(X_upd)))
+    #     #trOrig = reshape(densEnsemble_trf[1:nPos,1], dimensions[1], dimensions[2])
+    #     #trUpd = reshape(X_upd_nontr[1:nPos,1], dimensions[1], dimensions[2])
+    #     #invtrUpd = reshape(X_upd[1:nPos,1], dimensions[1], dimensions[2])
+    #     #display(plot(heatmap(trOrig, title="Orig transformed"), heatmap(trUpd,title="Corrected"),
+    #     #    heatmap(invtrUpd,title="Corrected inv-transformed")))
+    # end
 
     # Make sure all values are real:
     X_upd = real(X_upd)
     
-    allCount = length(X_upd[1:nPos,:])
-    szU = size(X_upd[1:nPos,:])
-    negCount = 0
-    negSum = 0
-    for i=1:szU[1]
-        for j=1:szU[2]
-            if (X_upd[i,j] < 0.0)
-                negCount = negCount+1
-                negSum = negSum+X_upd[i,j]
-            end
-        end
-    end
-    println("Density: Negative / all: "*string(negCount)*" / "*string(allCount)*" , fraction = "*string(float(negCount)/float(allCount))*" , avg value = "*string(negSum/float(negCount)))
-    X_upd_part = X_upd[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos,:]
-    allCount = length(X_upd_part)
-    szU = size(X_upd_part)
-    negCount = 0
-    negSum = 0
-    for i=1:szU[1]
-        for j=1:szU[2]
-            if (X_upd_part[i,j] < 0.0)
-                negCount = negCount+1
-                negSum = negSum+X_upd_part[i,j]
-            end
-        end
-    end
-    println("Food: Negative / all: "*string(negCount)*" / "*string(allCount)*" , fraction = "*string(float(negCount)/float(allCount))*" , avg value = "*string(negSum/float(negCount)))
+    # allCount = length(X_upd[1:nPos,:])
+    # szU = size(X_upd[1:nPos,:])
+    # negCount = 0
+    # negSum = 0
+    # for i=1:szU[1]
+    #     for j=1:szU[2]
+    #         if (X_upd[i,j] < 0.0)
+    #             negCount = negCount+1
+    #             negSum = negSum+X_upd[i,j]
+    #         end
+    #     end
+    # end
+    # println("Density: Negative / all: "*string(negCount)*" / "*string(allCount)*" , fraction = "*string(float(negCount)/float(allCount))*" , avg value = "*string(negSum/float(negCount)))
+    # X_upd_part = X_upd[stateOffsetFood*nPos+1:(stateOffsetFood+1)*nPos,:]
+    # allCount = length(X_upd_part)
+    # szU = size(X_upd_part)
+    # negCount = 0
+    # negSum = 0
+    # for i=1:szU[1]
+    #     for j=1:szU[2]
+    #         if (X_upd_part[i,j] < 0.0)
+    #             negCount = negCount+1
+    #             negSum = negSum+X_upd_part[i,j]
+    #         end
+    #     end
+    # end
+    # println("Food: Negative / all: "*string(negCount)*" / "*string(allCount)*" , fraction = "*string(float(negCount)/float(allCount))*" , avg value = "*string(negSum/float(negCount)))
     
     # Cut off any negative values for density and food (but not for speeds, which can be negative):
     X_upd[1:nPos,:] = max.(0.0, X_upd[1:nPos,:])
@@ -238,6 +217,7 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot, t)
     end
     
     # Apply corrections for density for each ensemble member:
+    timeBefore = time()
     if as.resampleAll # Full resampling strategy
 
         #aSums = zeros(as.N, 2)   
@@ -277,19 +257,8 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot, t)
             updArray = indsArray
         
             doWrite = i==1
-            
-            # if doWrite
-            #     filename = "OT_example_t_"*string(Int(round(t)))*".csv"
-            #     println("Writing "*filename)
-            #     writedlm(filename, ot[:,:,i], ',')
 
-            # end
-
-            # Apply Sinkhorn individually for ensemble members (slow!):
-            #updArray, stats, origField = applyCorrectionsSinkhorn(copy(updArray), densityField, origField, xlim, ylim, dxy, doWrite)
-            
             # Move individuals according to transport plan:
-            #println("Updating member "*string(i)*" based on sinkhorn transport.")
             updArray, origField = applyCorrectionsFromSinkhorn(copy(indsArray), ot[:,:,i], origField, dimensions, xlim, ylim, dxy,
                                                                as.fuzzySinkhornMoves, doWrite)
             
@@ -302,7 +271,10 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot, t)
         end
                 
     end
-    
+    timeAfter = time()
+    timeUsed = timeAfter-timeBefore
+    global totalTimeUsed += timeUsed
+
     # If activated, apply corrections for speed:
     if as.speedsInStateVec #&& as.resampleAll
 
