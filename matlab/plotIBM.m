@@ -4,7 +4,7 @@
 %prefix = 'D:/work/ibm-enkf/test2/loc6.5_uv_upd__';
 %prefix = 'D:/work/ibm-enkf/r1run/twintest__resample_';
 %prefix = 'C:/temp/twintest2__resample_';
-prefix = 'C:/temp/anamorph__resample_';
+prefix = 'C:/temp/d_twin123_resample_';
 %prefix = 'C:/temp/d_gtwin_perturb_1_resample_';
 %prefix = 'C:/temp/d_gtwin_indi2500_13_resample_';
 %prefix = 'C:/temp/indi2500_10_resample_';
@@ -22,7 +22,7 @@ dt = 1*0.2;
 if length(dims) > 3
     dt = dims(4);
 end
-speedup = 3;
+speedup = 5;
 
 x_twin = dlmread([prefix 'twinX.csv']);
 y_twin = dlmread([prefix 'twinY.csv']);
@@ -56,7 +56,7 @@ v.FrameRate = 4; % Default 30
 open(v);
 
 figure('Renderer', 'painters', 'Position', [10 50 1100 800])
-ncol = 3;
+ncol = 4;%3;
 tiledlayout(2,ncol)
 
 if animate > 0
@@ -88,17 +88,17 @@ for i=range
     clim([0 3])
     title('Individuals (ensemble member 1)')
     
-    % nexttile(4)
-    % dFieldT = reshape(Xfld_e(:,i), dims(1), dims(2));
-    % pcolor(dFieldT'), shading flat, colorbar
-    % clim([0 2])
-    % title('Food field (ensemble)')
+    nexttile(4)
+    dFieldT = reshape(Xfld_e(:,i), dims(1), dims(2));
+    pcolor(dFieldT'), shading flat, colorbar
+    clim([0 2])
+    title('Food field (ensemble)')
 
-    % nexttile(ncol+4)
-    % dFieldT = reshape(Xfld_twin(:,i), dims(1), dims(2));
-    % pcolor(dFieldT'), shading flat, colorbar
-    % clim([0 2])
-    % title('Food field (twin)')
+    nexttile(ncol+4)
+    dFieldT = reshape(Xfld_twin(:,i), dims(1), dims(2));
+    pcolor(dFieldT'), shading flat, colorbar
+    clim([0 2])
+    title('Food field (twin)')
 
     % nexttile(ncol+4)
     % dFieldT = reshape(densStd_e(:,i), dims(1), dims(2));

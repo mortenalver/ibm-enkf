@@ -3,8 +3,6 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot, t)
     # Handle the assimilation process from derivation of state values
     # via calling the Ensemble Kalman filter to updating the IBM.
 
-    println("doplot="*string(doPlot))
-
     Ndim = as.N + 1 # There are N ensemble members plus a twin
 
     # Define ranges:
@@ -98,11 +96,7 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot, t)
         writedlm(storageDir*"X_f_all.csv", densEnsemble, ',')
     end
 
-
-    println("Member 1 sum abs deviation: ", sum(abs.(densEnsemble[:,1]-densTwin)) )
-
     # Ensemble Kalman filter:
-
     
     # Measurement model:
     M = zeros(Float64,1,1)
@@ -123,6 +117,7 @@ function ibmAssimilation(as, ensemble, X_fld, xlim, ylim, dxy, doPlot, t)
     
     Rvec = Rval*ones(Float64, size(M,1))
     R = Diagonal(Rvec)
+    
     
 
 

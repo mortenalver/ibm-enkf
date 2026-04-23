@@ -1,8 +1,6 @@
-%direc = "C:/temp/";
-%direc = "D:/work/ibm-enkf/test1/"
-%direc = "D:/work/ibm-enkf/test2/"
 %direc = ["D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/"];
-direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
+direc = ["E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/"];
+%direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
 %direc = ["D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/"];
 %runs = ["d_test11_resample_", "test12_resample_", "test12_"];
 
@@ -18,24 +16,25 @@ direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
 %runNames = ["Free-run", "RS", "OT"];%"RS 1.5", "RS 2.5", %, "OT 2"];%, "OT 3"];%, "OT rapid"];
 %runs = ["d_twintest2__resample_", "twintest2__resample_", "twintest2__"];
 
-%runs = ["d_r1run__resample_", "r1run2__resample_";];%"twintest2__resample_"];%, "twintest2__resample_"];
-%runNames = ["Free-run", "RS"];%, "RS 20"];
+%runs = ["d_r1run__resample_", "r1run2__resample_", "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+runs = ["d_r1test123__resample_", "r1test123__resample_", "r1test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+runNames = ["Free-run", "RS", "OT"];%, "RS 20"];
 
 %runs = ["d_test1__resample_", "test1__resample_", "test_nouv__resample_", "test_nospeed__resample_"];%, ...
     %"anamorph__resample_"];
 %runNames = ["Free-run", "RS", "RS no food", "RS no speed"];%, "RS GAT"];%, "RS 20"];
-runs = ["d_test1__resample_", "test1__resample_", "testr__resample_"];
-runNames = ["Free-run", "RS", "RS lower R"];%, "RS 20"];
+%runs = ["d_test1__resample_", "test1__resample_", "shortloc__resample_"];
+%runNames = ["Free-run", "RS", "RS lower R"];%, "RS 20"];
 
 
-markSignificances = 0;
+markSignificances = 1;
 
-plotEndTime = 10;%100;
+plotEndTime = 100;%100;
 
 dt = 1*0.2;
 
 plotDists = 1;
-plotTimes = [10 20 35];
+plotTimes = [10 50 90];
 
 signLevel = 0.05;
 
@@ -121,15 +120,15 @@ for i=1:length(runs)
         rmsEnkf(j,i) = myRms(devi, dims);
         
         if plotDists > 0
-            clims = [0 20];%[0 3];%[0 100];
+            clims = [0 2];%[0 3];%[0 100];
             ppp = find(j*dt == plotTimes);
             if numel(ppp)>0
                 j
                 if i==1
                     % Plot twin:
                     nexttile((ppp-1)*(1+length(runs))+1)
-                    dField = reshape(dens_twin(:,j), dims(1), dims(2));
-                    %dField = reshape(Xfld_twin(:,j), dims(1), dims(2));
+                    %dField = reshape(dens_twin(:,j), dims(1), dims(2));
+                    dField = reshape(Xfld_twin(:,j), dims(1), dims(2));
                     pcolor(dField'), shading flat, axis image
                     if ppp==1
                         cbr = colorbar, 
@@ -142,8 +141,8 @@ for i=1:length(runs)
                     axis off, box on
                 end
                 nexttile((ppp-1)*(1+length(runs))+1+i)
-                dField = reshape(dens_e(:,j), dims(1), dims(2));
-                %dField = reshape(Xfld_e(:,j), dims(1), dims(2));
+                %dField = reshape(dens_e(:,j), dims(1), dims(2));
+                dField = reshape(Xfld_e(:,j), dims(1), dims(2));
                 pcolor(dField'), shading flat, axis image
                 clim(clims)
                 %scatter(x_1(:,i), y_1(:,i), 1, Ei1(:,j), 'filled');
@@ -158,6 +157,7 @@ exportgraphics(gcf, 'density_snaps.eps')
 %%
 % Set ttt in case the other matrices have grown larger:
 ttt = dt*(1:size(rmsDens,1));
+inclI = ttt <= plotEndTime;
 
 figure('Renderer', 'painters', 'Position', [50 50 1000 650]);
 tld = tiledlayout(4,3, "TileSpacing","compact");
@@ -165,17 +165,19 @@ nexttile, plot(ttt, rmsDens), title('Density RMS'), grid on, hold on
 xlabel('Time')
 lgd = legend([runNames])%, lgd.Location = 'NorthEast'
 lgd.Layout.Tile = 'East'; 
-fixylim(gca, plotEndTime);
+fixxlim(gca, plotEndTime);
 nexttile, plot(ttt, rmsE), title('Energy RMS'), grid on
 xlabel('Time')
+fixxlim(gca, plotEndTime);
 
 nexttile, plot(ttt, rmsX), title('Food field RMS'), grid on
 xlabel('Time')
+fixxlim(gca, plotEndTime);
 
-nexttile, bar(mean(rmsDens,1)), title('Mean density RMS'), xticklabels(runNames), grid on
-hold on, h = errorbar(1:length(runs), mean(rmsDens,1), std(rmsDens,0,1),'Color','k','LineStyle','none','LineWidth',1);
+nexttile, bar(mean(rmsDens(inclI,:),1)), title('Mean density RMS'), xticklabels(runNames), grid on
+hold on, h = errorbar(1:length(runs), mean(rmsDens(inclI,:),1), std(rmsDens(inclI,:),0,1),'Color','k','LineStyle','none','LineWidth',1);
 if markSignificances
-    markSignificance(h, runs, rmsDens, signLevel)
+    markSignificance(h, runs, rmsDens(inclI,:), signLevel)
 end
 % for i=2:length(runs)
 %     aov = anova(rmsDens(:,[1 i]));
@@ -187,46 +189,49 @@ end
 % end
 %sigstar(groups, pvals)
 
-nexttile, bar(mean(rmsE,1)), title('Mean energy RMS'), xticklabels(runNames), grid on
-hold on, h = errorbar(1:length(runs), mean(rmsE,1), std(rmsE,0,1),'Color','k','LineStyle','none','LineWidth',1);
+nexttile, bar(mean(rmsE(inclI,:),1)), title('Mean energy RMS'), xticklabels(runNames), grid on
+hold on, h = errorbar(1:length(runs), mean(rmsE(inclI,:),1), std(rmsE(inclI,:),0,1),'Color','k','LineStyle','none','LineWidth',1);
 if markSignificances
-    markSignificance(h, runs, rmsE, signLevel)
+    markSignificance(h, runs, rmsE(inclI,:), signLevel)
 end
 
-nexttile, bar(mean(rmsX,1)), title('Mean food field RMS'), xticklabels(runNames), grid on
-hold on, h = errorbar(1:length(runs), mean(rmsX,1), std(rmsX,0,1),'Color','k','LineStyle','none','LineWidth',1);
+nexttile, bar(mean(rmsX(inclI,:),1)), title('Mean food field RMS'), xticklabels(runNames), grid on
+hold on, h = errorbar(1:length(runs), mean(rmsX(inclI,:),1), std(rmsX(inclI,:),0,1),'Color','k','LineStyle','none','LineWidth',1);
 if markSignificances
-    markSignificance(h, runs, rmsX, signLevel)
+    markSignificance(h, runs, rmsX(inclI,:), signLevel)
 end
 
 nexttile, plot(ttt, corrDens), title('Density correlation'), grid on, hold on
-xlabel('Time')
+xlabel('Time'), ylim([0 1])
+fixxlim(gca, plotEndTime);
 
 nexttile, plot(ttt, corrE), title('Energy correlation'), grid on
-xlabel('Time')
+xlabel('Time'), ylim([0 1])
+fixxlim(gca, plotEndTime);
 
 nexttile, plot(ttt, corrX), title('Food field correlation'), grid on
-xlabel('Time')
+xlabel('Time'), ylim([0 1])
+fixxlim(gca, plotEndTime);
 
 
-nexttile, bar(mean(corrDens,1)), title('Mean density correlation'), xticklabels(runNames), grid on
-hold on, h = errorbar(1:length(runs), mean(corrDens,1), std(corrDens,0,1),'Color','k','LineStyle','none','LineWidth',1);
+nexttile, bar(mean(corrDens(inclI,:),1)), title('Mean density correlation'), xticklabels(runNames), grid on
+hold on, h = errorbar(1:length(runs), mean(corrDens(inclI,:),1), std(corrDens(inclI,:),0,1),'Color','k','LineStyle','none','LineWidth',1);
 if markSignificances
-    markSignificance(h, runs, corrDens, signLevel)
+    markSignificance(h, runs, corrDens(inclI,:), signLevel)
 end
 ylim([0 1])
 
-nexttile, bar(mean(corrE,1)), title('Mean energy correlation'), xticklabels(runNames), grid on
-hold on, h = errorbar(1:length(runs), mean(corrE,1), std(corrE,0,1),'Color','k','LineStyle','none','LineWidth',1);
+nexttile, bar(mean(corrE(inclI,:),1)), title('Mean energy correlation'), xticklabels(runNames), grid on
+hold on, h = errorbar(1:length(runs), mean(corrE(inclI,:),1), std(corrE(inclI,:),0,1),'Color','k','LineStyle','none','LineWidth',1);
 if markSignificances
-    markSignificance(h, runs, corrE, signLevel)
+    markSignificance(h, runs, corrE(inclI,:), signLevel)
 end
 ylim([0 1])
 
-nexttile, bar(mean(corrX,1)), title('Mean food field correlation'), xticklabels(runNames), grid on
-hold on, h = errorbar(1:length(runs), mean(corrX,1), std(corrX,0,1),'Color','k','LineStyle','none','LineWidth',1);
+nexttile, bar(mean(corrX(inclI,:),1)), title('Mean food field correlation'), xticklabels(runNames), grid on
+hold on, h = errorbar(1:length(runs), mean(corrX(inclI,:),1), std(corrX(inclI,:),0,1),'Color','k','LineStyle','none','LineWidth',1);
 if markSignificances
-    markSignificance(h, runs, corrX, signLevel)
+    markSignificance(h, runs, corrX(inclI,:), signLevel)
 end
 ylim([0 1])
 
@@ -266,10 +271,29 @@ exportgraphics(gcf, 'update_stats.eps')
 %nexttile, plot(stdDens), title('Mean density stddev'), grid on, legend(runNames,'Location','southeast')
 
 
+function fixxlim(gca, plotEndTime)
+    xl = xlim;
+    if xl(2) > plotEndTime
+        xlim([0 plotEndTime]);
+    end
+
+end
+
 
 function markSignificance(h, runs, values, signLevel)
 
+    N = size(values,1);
     for i=2:length(runs)
+        
+        [acfX, lagsX] = autocorr(values(:,1), 'NumLags', N-1);
+        [acfY, lagsY] = autocorr(values(:,i), 'NumLags', N-1);
+        plot(lagsX, acfX), hold on
+        % 3. Calculate Effective Sample Size (N*)
+        % Using the formula: N / sum(rhoX * rhoY)
+        % NOTE: For many, you might sum up to a specific lag limit (e.g., Pyper & Peterman)
+        prodAcf = acfX .* acfY;
+        effectiveN = N / sum(prodAcf)
+
         aov = anova(values(:,[1 i]));
         pval = aov.stats.pValue(1);
         if pval < signLevel
@@ -289,10 +313,3 @@ function markSignificance(h, runs, values, signLevel)
 
 end
 
-function fixylim(gca, plotEndTime)
-    yl = ylim;
-    if yl(2) > plotEndTime
-        ylim([0 plotEndTime]);
-    end
-
-end

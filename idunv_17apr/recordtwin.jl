@@ -1,3 +1,0 @@
-
-include("runIBM.jl")
-recordtwin()

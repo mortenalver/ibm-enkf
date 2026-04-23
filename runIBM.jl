@@ -72,27 +72,27 @@ function main(setDryrun, setResample, recordingTwin)
     
 
     # Basic settings:
-    simnamePrefix = "test_" 
+    simnamePrefix = "r1test123_" 
     useRecordedTwin = true
-    recordedTwinPrefix = storageDir*"d_twin1234_resample_"
+    recordedTwinPrefix = storageDir*"d_twin123_resample_"
     dt = 0.2 # Time step
-    t_end = 35.2#99.8#119.8 # Simulation end time
+    t_end = 100.2#99.8#119.8 # Simulation end time
     storageInterval = 1
 
     # Assimilation settings:
     as = AssimSettings()
-    as.N = 200#300# 100 # Number of ensemble members.
+    as.N = 300# 100 # Number of ensemble members.
     
 
     #recordingTwin = true # True to record new twin:
     if recordingTwin
         # Set random seed to get deterministic outcome. Note: Threads.nthreads must be set to 1!
-        Random.seed!(1234)
+        Random.seed!(123)
 
         t_end = 200.0
         useRecordedTwin = false
         storageInterval = 1
-        simnamePrefix = "twin1234"
+        simnamePrefix = "twin123"
         as.N = 1
     end
     plotTimeStep = 20

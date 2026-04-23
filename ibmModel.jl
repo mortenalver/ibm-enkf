@@ -214,11 +214,10 @@ function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
 
     # Perturb feed concentration field:
     X_pert = getRandomField([size(X_fld,1) size(X_fld,2)], ms.sigma_X, ms.n_wX, ms.d_wX, 0.0)
-    X_fld = X_fld + dt.*X_pert
+    X_fld = X_fld + dt.*X_pert 
 
-    # Add food everywhere to a maximum of 2:
-    #X_fld = X_fld + fill(dt*0.5*0.025, size(X_fld,1), size(X_fld,2))
-    #X_fld = X_fld + fill(dt*0.1*0.025, size(X_fld,1), size(X_fld,2))
-    #X_fld = min.(X_fld, 2.0)
+    # Add food everywhere to a maximum of 4:
+    X_fld = X_fld + fill(dt*0.01, size(X_fld,1), size(X_fld,2))
+    X_fld = min.(X_fld, 4.0)
     return X_fld, totInteractions/length(indsArray)
 end
