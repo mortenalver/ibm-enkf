@@ -1,6 +1,6 @@
 %direc = ["D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/"];
-direc = ["E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/"];
-%direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
+%direc = ["E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/"];
+direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
 %direc = ["D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/"];
 %runs = ["d_test11_resample_", "test12_resample_", "test12_"];
 
@@ -19,19 +19,19 @@ direc = ["E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/", "E:/work/
 %runs = ["d_r1run__resample_", "r1run2__resample_", "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
 %runs = ["d_r1test123__resample_", "r1test123__resample_", "r1test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
 %runs = ["d_r2test123__resample_", "r2test123__resample_", "r2test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
-runs = ["d_r2test123__resample_", "r3test123__resample_", "r3test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
-runNames = ["Free-run", "RS", "OT"];%, "RS 20"];
+%runs = ["d_r2test123__resample_", "r3test123__resample_", "r3test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+%runNames = ["Free-run", "RS", "OT"];%, "RS 20"];
 
-%runs = ["d_normal123__resample_", "normal123__resample_", "nofood123__resample_", "nospeed123__resample_"];%, ...
+runs = ["d_normal123__resample_", "normal123__resample_", "nofood123__resample_", "nospeed123__resample_"];%, ...
     %"anamorph__resample_"];
-%runNames = ["Free-run", "RS", "RS no food", "RS no speed"];%, "RS GAT"];%, "RS 20"];
+runNames = ["Free-run", "RS", "RS no food", "RS no speed"];%, "RS GAT"];%, "RS 20"];
 %runs = ["d_test1__resample_", "test1__resample_", "shortloc__resample_"];
 %runNames = ["Free-run", "RS", "RS lower R"];%, "RS 20"];
 
 
-markSignificances = 1;
+markSignificances = 0;
 
-plotEndTime = 100;%100;
+plotEndTime = 35;%100;
 
 dt = 1*0.2;
 
@@ -242,6 +242,11 @@ exportgraphics(gcf, 'run_stats.eps')
 
 %%
 inclR = 2:length(runs);
+times = dt*(1:size(rmsDens,1));
+timesAs = times(assimInt:assimInt:end);
+timesAs = timesAs(timesAs < plotEndTime);
+timesI = assimInt:assimInt:(assimInt*floor(size(rmsDens,1)/assimInt));
+timesI = timesI(1:length(timesAs));
 figure('Renderer', 'painters', 'Position', [50 50 800 300]);
 tiledlayout(1,2, "TileSpacing","compact")
 %nexttile, plot(rmsEnkfIBM(assimInt:assimInt:end,2:end)), legend(runNames,'Location','southeast')
@@ -249,19 +254,19 @@ tiledlayout(1,2, "TileSpacing","compact")
 
 %nexttile, plot(rmsEnkf(:,:)), legend(runNames), title('Update - EnKF field RMS'), grid on
 
-nexttile, bar(mean(rmsEnkf(assimInt:assimInt:end,2:end))), grid on %, legend(runNames,'Location','southeast')
-hold on, h = errorbar(1:length(inclR), mean(rmsEnkf(assimInt:assimInt:end,inclR),1), std(rmsEnkf(assimInt:assimInt:end,inclR),0,1),'Color','k','LineStyle','none','LineWidth',1);
+nexttile, bar(mean(rmsEnkf(timesI,2:end))), grid on %, legend(runNames,'Location','southeast')
+hold on, h = errorbar(1:length(inclR), mean(rmsEnkf(timesI,inclR),1), std(rmsEnkf(timesI,inclR),0,1),'Color','k','LineStyle','none','LineWidth',1);
 if markSignificances
-    markSignificance(h, runs(inclR), rmsEnkf(assimInt:assimInt:end,inclR), signLevel)
+    markSignificance(h, runs(inclR), rmsEnkf(timesI,inclR), signLevel)
 end
 xticklabels(runNames(inclR)), grid on
 title('EnKF accuracy'), grid on
 yl = ylim;
 
-nexttile, bar(mean(rmsEnkfIBM(assimInt:assimInt:end,inclR)))
-hold on, h = errorbar(1:length(inclR), mean(rmsEnkfIBM(assimInt:assimInt:end,inclR),1), std(rmsEnkfIBM(assimInt:assimInt:end,inclR),0,1),'Color','k','LineStyle','none','LineWidth',1);
+nexttile, bar(mean(rmsEnkfIBM(timesI,inclR)))
+hold on, h = errorbar(1:length(inclR), mean(rmsEnkfIBM(timesI,inclR),1), std(rmsEnkfIBM(timesI,inclR),0,1),'Color','k','LineStyle','none','LineWidth',1);
 if markSignificances
-    markSignificance(h, runs(inclR), rmsEnkfIBM(assimInt:assimInt:end,inclR), signLevel)
+    markSignificance(h, runs(inclR), rmsEnkfIBM(timesI,inclR), signLevel)
 end
 xticklabels(runNames(inclR)), grid on
 ylim(yl)

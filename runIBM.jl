@@ -19,8 +19,13 @@ using OptimalTransport
 using DataAssim
 using Random 
 
-include("settings.jl")
+# Import model code:
 include("ibmModel.jl")
+include("testModelSettings.jl")
+
+include("settings.jl") # Assimilation settings
+
+# Import library functions:
 include("computeDensityField.jl")
 include("enKF.jl")
 include("util.jl")
@@ -130,7 +135,7 @@ function main(setDryrun, setResample, recordingTwin)
     as.resampleAll = setResample # True to use resampling strategy instead of sinkhorn/resize strategy
     as.assimInterval = 10 # Time steps between each assimilation procedure
     as.anamorphicTransform = false # If true, transform density values to near-gaussian distributions before sending to EnKF
-    as.speedsInStateVec = true # If true, include mean speed components per grid cell in the state vector.
+    as.speedsInStateVec = false # If true, include mean speed components per grid cell in the state vector.
     as.foodInStateVec = true # If true, include food field in the state vector
     as.measureFood = true # If true, include measurements of food
     as.regularMeasurements = true # If true, place measurements regularly at a given measSpacing
