@@ -1,12 +1,12 @@
 
 %direc = "C:/temp/";
-%direc = "D:/work/ibm-enkf/test2/"
-direc = "E:/work/ibm-enkf/r1run_123/";
+direc = "D:/work/ibm-enkf/test2/"
+%direc = "D:/work/ibm-enkf/r1run_123/";
 %runs = ["test5000_resample_", "test5000_"];
 %runs3 = ["d_perturb_7_resample_", "perturb_7_resample_", "perturb_7_"]
 %runs3 = ["d_run_2026_4_resample_", "run_2026_4_resample_", "run_2026_5_fuzzy_no_uv_upd__"]
-%runs3 = ["d_loc6.5_uv_upd__resample_", "noloc_uv_upd__resample_","loc6.5_uv_upd__"];
-runs3 = ["d_r2test123__resample_", "r2test123__resample_", "r2test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+runs3 = ["d_loc6.5_uv_upd__resample_", "noloc_uv_upd__resample_","loc6.5_uv_upd__"];
+%runs3 = ["d_r2test123__resample_", "r2test123__resample_", "r2test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
 
 %runs3 = ["d_indi2500_12_resample_", "indi2500_12_resample_", "indi2500_12_"];
 %runs = ["test11_resample_"];
@@ -21,13 +21,16 @@ N_twin = dlmread(prefix+"twinN.csv");
 dt = 1*0.2;
 ttt = dt*(1:size(x_twin,2));
 
-
+assimInt=10;
 %%
 runs = runs3(1:3);
 runnames = ["Free-run", "RS", "OT"];
 
 nToPlot = 3;
-idx = randperm(size(x_twin,1), nToPlot);
+
+%idx = randperm(size(x_twin,1), nToPlot);
+idx = [2931        3865        1962];
+
 iFrom = 1;
 iTo = 250;
 
@@ -89,6 +92,7 @@ for modI = 1:length(runs)
 end
 
 exportgraphics(gcf, 'ind_traj.eps')
+exportgraphics(gcf, 'ind_traj.pdf')
 
 %%
 % Analyse step lengths
@@ -123,6 +127,7 @@ if length(runs) > 1
     legend(runnames)
 end
 exportgraphics(gcf, 'OT_stepsizes.eps')
+exportgraphics(gcf, 'OT_stepsizes.pdf')
 
 %%
 runs = runs3(2:3);
@@ -202,6 +207,7 @@ for varI = 1:length(varsToAnalyze)
 end
 
 exportgraphics(gcf, 'frequencies.eps')
+exportgraphics(gcf, 'frequencies.pdf')
 
 %%
 % Find trajectories starting at almost the same position, and compare:
@@ -287,6 +293,7 @@ end
 % nexttile(3), xlim(xl), ylim(yl), nexttile(6), xlim(xl), ylim(yl), 
 
 exportgraphics(gcf, 'ind_traj_pos0.eps')
+exportgraphics(gcf, 'ind_traj_pos0.pdf')
 
 
 %%
@@ -356,3 +363,4 @@ for interva = 1:length(fromIAll)
 end
 
 exportgraphics(gcf, 'ind_traj_dev.eps')
+exportgraphics(gcf, 'ind_traj_dev.pdf')

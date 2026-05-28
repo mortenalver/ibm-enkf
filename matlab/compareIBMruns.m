@@ -1,7 +1,7 @@
 %direc = ["D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/"];
-%direc = ["E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/", "E:/work/ibm-enkf/r1run_123/"];
+%direc = ["D:/work/ibm-enkf/r1run_123/", "D:/work/ibm-enkf/r1run_123/", "D:/work/ibm-enkf/r1run_123/"];
 direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
-%direc = ["D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/", "D:/work/ibm-enkf/r1run/"];
+%direc = ["E:/work/ibm-enkf/r1run/", "E:/work/ibm-enkf/r1run/", "E:/work/ibm-enkf/r1run/"];
 %runs = ["d_test11_resample_", "test12_resample_", "test12_"];
 
 % runs = ["d_test2500_resample_", "test2500_resample_", "test2500_3_resample_", "test2500_4_resample_", "test2500_5_resample_"]%, "test5000_"];
@@ -16,22 +16,22 @@ direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
 %runNames = ["Free-run", "RS", "OT"];%"RS 1.5", "RS 2.5", %, "OT 2"];%, "OT 3"];%, "OT rapid"];
 %runs = ["d_twintest2__resample_", "twintest2__resample_", "twintest2__"];
 
-%runs = ["d_r1run__resample_", "r1run2__resample_", "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
-%runs = ["d_r1test123__resample_", "r1test123__resample_", "r1test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
-%runs = ["d_r2test123__resample_", "r2test123__resample_", "r2test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
-%runs = ["d_r2test123__resample_", "r3test123__resample_", "r3test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
-%runNames = ["Free-run", "RS", "OT"];%, "RS 20"];
+% runs = ["d_r2test123__resample_", "r3test123__resample_", "r3test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
+% runNames = ["Free-run", "RS", "OT"];%, "RS 20"];
 
-runs = ["d_normal123__resample_", "normal123__resample_", "nofood123__resample_", "nospeed123__resample_"];%, ...
+runs = ["d_salm_", "salm_resample_"];
+runNames = ["Free-run", "RS"];
+
+%runs = ["d_normal123__resample_", "normal123__resample_", "nofood123__resample_", "nospeed123__resample_"];%, ...
     %"anamorph__resample_"];
-runNames = ["Free-run", "RS", "RS no food", "RS no speed"];%, "RS GAT"];%, "RS 20"];
+%runNames = ["Free-run", "RS", "RS no food", "RS no speed"];%, "RS GAT"];%, "RS 20"];
 %runs = ["d_test1__resample_", "test1__resample_", "shortloc__resample_"];
 %runNames = ["Free-run", "RS", "RS lower R"];%, "RS 20"];
 
 
-markSignificances = 0;
+markSignificances = 1;
 
-plotEndTime = 35;%100;
+plotEndTime = 100;
 
 dt = 1*0.2;
 
@@ -156,6 +156,7 @@ for i=1:length(runs)
     end
 end
 exportgraphics(gcf, 'density_snaps.eps')
+exportgraphics(gcf, 'density_snaps.pdf')
 %%
 % Set ttt in case the other matrices have grown larger:
 ttt = dt*(1:size(rmsDens,1));
@@ -239,6 +240,7 @@ ylim([0 1])
 
 
 exportgraphics(gcf, 'run_stats.eps')
+exportgraphics(gcf, 'run_stats.pdf')
 
 %%
 inclR = 2:length(runs);
@@ -273,6 +275,7 @@ ylim(yl)
 title('IBM update accuracy'), grid on
 
 exportgraphics(gcf, 'update_stats.eps')
+exportgraphics(gcf, 'update_stats.pdf')
 
 %%
 %nexttile, plot(stdDens), title('Mean density stddev'), grid on, legend(runNames,'Location','southeast')

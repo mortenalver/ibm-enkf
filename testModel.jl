@@ -7,16 +7,54 @@ mutable struct Individual
     v_y::Float64
     E::Float64
     n::Float64
-    refX::Float64
-    refY::Float64
-    lastArea::Int
 end
 
-function createIndividual(x, y, n)
-    ind = Individual(x, y, 0.0, 0.0, 0.0, n, 0.0, 0.0, -1)
+function setModelSettings(ms)
+    ms.xMax = 20
+    ms.yMax = 15
+    ms.k_X = 2.5 # Strength of motion towards food gradient.
+    ms.X_a = 0.01 # Global addition rate of food.
+    ms.indsInteraction = true # If true, individuals will be repulsed from each other at close distances (not very optimized, so makes model slower)
+    ms.indsAlignThresh = 0.3 # Distance threshold for individual alignment.
+    ms.indsRepulseThresh = 0.08 # Distance threshold for individual repulsion.
+    ms.indsAttractThresh = 0.75 # Distance threshold for individual attraction.
+    ms.n_wuv = 4 # Number of perturbations for u/v
+    ms.n_wX = 2 # Number of perturbations for X
+    ms.sigma_uv = 1.0 # 3.0 # Intensity of u/v random perturbations
+    ms.sigma_X = 0.8 # Intensity of X random perturbations
+    ms.d_wuv = 5.0
+    ms.d_wX = 6.0
+    ms.indsAlignStrength = 0.01 # Strength of individual interaction
+    ms.indsRepulseStrength = 0.4#0.08 # Strength of individual interaction
+    ms.indsAttractStrength = 0.002 # Strength of individual interaction
+    ms.pullTowardsCOG = false # If true, individuals will be pulled towards the center of gravity of the population
+    ms.pullTowardsCOGStrength = 0.75#0.3 # Strength of the pull towards COG if activated
+    ms.speedUpdateRate = 0.4 # 0.6 # Multiplier for speed update - lower means more intertia in speed updates
+    ms.nInd = 5000 #6000 # Number of individuals
+    ms.nPerInd = 1.0 # individuals per super individual
+
+end
+
+function getModelName()
+    return "Test"
+end
+
+function getRandomStartPos(ms)
+    return [3.1 + 2*randn(Float64), 9.1 + 2*randn(Float64)]
+end
+
+function getInitialFieldLevel()
+    return 1.0
+end
+
+function createIndividual(x, y, n, ms)
+    ind = Individual(x, y, 0.0, 0.0, 0.0, n)
     return ind
 end
 
+function createIndividual(states)
+    ind = Individual(states[1], states[2], states[3], states[4], states[5], states[6])
+end
 
 function getSpeedMult(X)
     # Get speed multiplier as a function of local food concentration:
@@ -173,7 +211,19 @@ function step(t, dt, ind, indsArray, perturb, idx, xall, yall, X_fld, xrng, yrng
     return totInteractions
 end
 
-function stepAll(t, dt, indsArray, perturb, ms, X_fld, xrng, yrng)
+function stepAll(t, dt, indsArray, doPerturb, ms, X_fld, xrng, yrng)
+
+    xlim = [0, ms.xMax]
+    ylim = [0, ms.yMax]
+    
+    # Roll random numbers used to perturb individuals' speeds:
+    perturb = zeros(Float64, ms.n_wuv, 4)
+    if doPerturb
+        for ptI = 1:size(perturb,1)
+            perturb[ptI,:] = [ms.sigma_uv*randn(Float64), ms.sigma_uv*randn(Float64),
+                xlim[1]+rand(Float64)*(xlim[2]-xlim[1]), ylim[1]+rand(Float64)*(ylim[2]-ylim[1])]
+        end
+    end
 
     xall = []
     yall = []

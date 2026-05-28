@@ -1,8 +1,9 @@
 
 %prefix = 'D:/work/ibm-enkf/test1/perturb_5_';
-prefix = 'D:/work/ibm-enkf/test1/run_2026_3_resample_';
+%prefix = 'D:/work/ibm-enkf/test1/run_2026_3_resample_';
 %prefix = 'C:/temp/perturb_1_resample_';
-%prefix = 'C:/temp/d_gtwin_perturb_1_resample_';
+%prefix = 'C:/temp/d_salm_';
+prefix = 'C:/temp/salm_';
 %prefix = 'C:/temp/d_gtwin_indi2500_13_resample_';
 %prefix = 'C:/temp/indi2500_10_resample_';
 %prefix = 'C:/temp/nomigr11_resample_';
@@ -40,7 +41,7 @@ dens_twin = dlmread([prefix 'twinDens.csv']);
 energy_twin = dlmread([prefix 'twinEnergy.csv']);
 Xfld_twin = dlmread([prefix 'twinXfld.csv']);
 
-enkfField = dlmread([prefix 'enkfField.csv']);
+%enkfField = dlmread([prefix 'enkfField.csv']);
 % Read ensemble values:
 x_1 = dlmread([prefix 'e1X.csv']);
 y_1 = dlmread([prefix 'e1Y.csv']);

@@ -20,7 +20,7 @@ using DataAssim
 using Random 
 
 # Import model code:
-include("ibmModel.jl")
+include("testModel.jl")
 include("testModelSettings.jl")
 
 include("settings.jl") # Assimilation settings
@@ -29,7 +29,7 @@ include("settings.jl") # Assimilation settings
 include("computeDensityField.jl")
 include("enKF.jl")
 include("util.jl")
-include("measurementModel.jl")
+include("testMeasurementModel.jl")
 include("applyCorrectionsIBM.jl")
 include("applyCorrectionsResample.jl")
 include("applyCorrectionsSinkhorn.jl")
@@ -88,7 +88,7 @@ function main(setDryrun, setResample, recordingTwin)
 
     # Assimilation settings:
     as = AssimSettings()
-    as.N = 300# 100 # Number of ensemble members.
+    as.N = 30# 100 # Number of ensemble members.
     
 
     #recordingTwin = true # True to record new twin:
@@ -103,7 +103,6 @@ function main(setDryrun, setResample, recordingTwin)
         as.N = 1
     end
     plotTimeStep = 20
-    initFoodLevel = 1.0
     
     # Simulation parameters:
     ms = ModelSettings()
@@ -214,7 +213,7 @@ function main(setDryrun, setResample, recordingTwin)
             # This is the twin and we should initialize from pre-recorded data:
             for i = 1:ms.nInd
                 ensemble[ensI][i] = Individual(rTwinX[i,1], rTwinY[i,1], rTwinVX[i,1], rTwinVY[i,1], 
-                    0.0, rTwinN[i,1], 0.0, 0.0, -1)
+                    0.0, rTwinN[i,1])
             end
         end
     end
@@ -234,7 +233,7 @@ function main(setDryrun, setResample, recordingTwin)
 
     
     # Initialize food field on same dimensions as the density field:
-    X_fld = fill(initFoodLevel, size(densityField,1), size(densityField,2),Ndim)
+    X_fld = fill(getInitialFieldLevel(), size(densityField,1), size(densityField,2),Ndim)
     
     # Let the twin's initial food field have a maximum:
     ##X_twin_pert = getRandomField([size(X_fld,1) size(X_fld,2)], 0.4, 1, size(X_fld,1)/2)
@@ -256,15 +255,9 @@ function main(setDryrun, setResample, recordingTwin)
             
         Threads.@threads for ensI = 1:Ndim
             if ensI < Ndim || !useRecordedTwin
-                # Roll random numbers used to perturb individuals' speeds:
-                perturb = zeros(Float64, ms.n_wuv, 4)
-                for ptI = 1:size(perturb,1)
-                    perturb[ptI,:] = [ms.sigma_uv*randn(Float64), ms.sigma_uv*randn(Float64),
-                        xlim[1]+rand(Float64)*(xlim[2]-xlim[1]), ylim[1]+rand(Float64)*(ylim[2]-ylim[1])]
-                end
-                
+               
                 indsArray = ensemble[ensI]
-                X_fld_upd, avgInteractions = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
+                X_fld_upd, avgInteractions = stepAll(t, dt, indsArray, true, ms, X_fld[:,:,ensI], xrng, yrng)
                 X_fld[:,:,ensI] = X_fld_upd
                 totInteractions += avgInteractions
             else
@@ -279,7 +272,6 @@ function main(setDryrun, setResample, recordingTwin)
                     ind.n = rTwinN[i,tstep]
                     ind.E = rTwinE[i,tstep]
                 end
-                #X_fld_upd = stepAll(t, dt, indsArray, perturb, ms, X_fld[:,:,ensI], xrng, yrng)
                 X_fld[:,:,ensI] = reshape(rTwinXfld[:,tstep], size(X_fld,1), size(X_fld,2))
             end
 

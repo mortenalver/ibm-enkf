@@ -4,12 +4,13 @@
 %prefix = 'D:/work/ibm-enkf/test2/loc6.5_uv_upd__';
 %prefix = 'D:/work/ibm-enkf/r1run/twintest__resample_';
 %prefix = 'C:/temp/twintest2__resample_';
-prefix = 'C:/temp/d_twin123_resample_';
+%prefix = 'C:/temp/d_twin123_resample_';
 %prefix = 'C:/temp/d_gtwin_perturb_1_resample_';
 %prefix = 'C:/temp/d_gtwin_indi2500_13_resample_';
 %prefix = 'C:/temp/indi2500_10_resample_';
 %prefix = 'C:/temp/nomigr11_resample_';
 %prefix = 'C:/temp/d_nomigr_long1_resample_';
+prefix = 'C:/temp/d_salm_';
 
 animate = 1;
 plotInd = 25;
@@ -22,7 +23,7 @@ dt = 1*0.2;
 if length(dims) > 3
     dt = dims(4);
 end
-speedup = 5;
+speedup = 2;
 
 x_twin = dlmread([prefix 'twinX.csv']);
 y_twin = dlmread([prefix 'twinY.csv']);
@@ -47,6 +48,8 @@ densStd_e = dlmread([prefix 'eDensStd.csv']);
 energy_e = dlmread([prefix 'eEnergy.csv']);
 Xfld_e = dlmread([prefix 'eXfld.csv']);
 
+xMax = ceil(max(x_1(:)));
+yMax = ceil(max(y_1(:)));
 
 %%
 
@@ -74,8 +77,8 @@ for i=range
 
     nexttile(1)
     %scatter(x_twin(:,i), y_twin(:,i), [], N_twin(:,i), 'filled');
-    h = scatter(x_twin(:,i), y_twin(:,i), 1, E_twin(:,i), 'filled');
-    xlim([0 20]), ylim([0 15])
+    h = scatter(x_twin(:,i), y_twin(:,i), 3, E_twin(:,i), 'filled');
+    xlim([0 xMax]), ylim([0 yMax])
     colorbar%, clim([0 3])
     clim([0 3])
     title("Individuals (twin) t="+string(time))
@@ -83,7 +86,7 @@ for i=range
     nexttile(ncol+1)
     %scatter(x_1(:,i), y_1(:,i), [], N_1(:,i), 'filled');
     scatter(x_1(:,i), y_1(:,i), 1, E_1(:,i), 'filled');
-    xlim([0 20]), ylim([0 15])
+    xlim([0 xMax]), ylim([0 yMax])
     colorbar%, clim([0 3])
     clim([0 3])
     title('Individuals (ensemble member 1)')
@@ -115,7 +118,7 @@ for i=range
     nexttile(ncol+2)
     dFieldE = reshape(dens_e(:,i), dims(1), dims(2));
     pcolor(dFieldE'), shading flat, colorbar
-    clim([0 50])
+    clim([0 5]); %clim([0 50])
     title('Density field (ensemble)')
 
     nexttile(3)

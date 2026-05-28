@@ -23,6 +23,7 @@ mutable struct ModelSettings
     d_wX::Float64
     xMax::Float64
     yMax::Float64
+    dxy::Float64
     ModelSettings() = new(2000,1,0.6,1.0,0.01,true,1.0,1.0,1.0,1.0,1.0,
-        false,1.0,5,5,1.0,1.0,2.0,2.0,10.0,10.0)
+        1.0,false,1.0,5,5,1.0,1.0,2.0,2.0,10.0,15.0,0.5)
 end
