@@ -19,7 +19,10 @@ direc = ["C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/", "C:/temp/"];
 % runs = ["d_r2test123__resample_", "r3test123__resample_", "r3test123__"];%, "r1run2__"];%"twintest2__resample_"];%, "twintest2__resample_"];
 % runNames = ["Free-run", "RS", "OT"];%, "RS 20"];
 
-runs = ["d_salm_", "salm_resample_"];
+% runs = ["d_salm2_", "d_salm3_"];
+% runNames = ["Free-run 1", "Free-run 2"];
+
+runs = ["d_test_", "test_resample_"];
 runNames = ["Free-run", "RS"];
 
 %runs = ["d_normal123__resample_", "normal123__resample_", "nofood123__resample_", "nospeed123__resample_"];%, ...
@@ -64,13 +67,7 @@ for i=1:length(runs)
     E_twin = dlmread(prefix+"twinEnergy.csv");
     E_e = dlmread(prefix+"eEnergy.csv");
     enkfField = dlmread(prefix+"enkfField.csv");
-    x_twin = dlmread(prefix+"twinX.csv");
-    y_twin = dlmread(prefix+"twinY.csv");
-    Ei_twin = dlmread(prefix+"twinE.csv");
-    x_1 = dlmread(prefix+"e1X.csv");
-    y_1 = dlmread(prefix+"e1Y.csv");
-    Ei1 = dlmread(prefix+"e1E.csv");
-
+    
     % On first iteration, initialize arrays:
     if i==1
         ttt = dt*(1:size(dens_twin,2));
@@ -137,8 +134,6 @@ for i=1:length(runs)
                         cbr.Layout.Tile = 'East'; 
                     end
                     clim(clims)
-                    %scatter(x_twin(:,i), y_twin(:,j), 1, Ei_twin(:,i), 'filled');
-                    %xlim([0 20]), ylim([0 15]), colorbar, clim([0 3])
                     title("Twin (t="+string(plotTimes(ppp))+")")
                     axis off, box on
                 end

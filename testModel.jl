@@ -9,6 +9,21 @@ mutable struct Individual
     n::Float64
 end
 
+function getIndStateVec(ind)
+    return [ind.x, ind.y, ind.v_x, ind.v_y, ind.n, ind.E]
+end
+
+
+function createIndividual(x, y, n, ms)
+    ind = Individual(x, y, 0.0, 0.0, 0.0, n)
+    return ind
+end
+
+function createIndividual(vec)
+    ind = Individual(vec[1], vec[2], vec[3], vec[4], vec[5], vec[6])
+    return ind
+end
+
 function setModelSettings(ms)
     ms.xMax = 20
     ms.yMax = 15
@@ -35,6 +50,10 @@ function setModelSettings(ms)
 
 end
 
+function initializeSettings(ms, dims)
+
+end
+
 function getModelName()
     return "Test"
 end
@@ -47,10 +66,6 @@ function getInitialFieldLevel()
     return 1.0
 end
 
-function createIndividual(x, y, n, ms)
-    ind = Individual(x, y, 0.0, 0.0, 0.0, n)
-    return ind
-end
 
 function createIndividual(states)
     ind = Individual(states[1], states[2], states[3], states[4], states[5], states[6])

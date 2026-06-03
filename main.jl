@@ -14,13 +14,11 @@ using Random
 include("salmon_tank/salmonModel.jl")
 include("salmon_tank/salmonModelSettings.jl")
 include("salmon_tank/salmonMeasurementModel.jl")
-simnamePrefix = "salm" 
 
-# Test model:
-#include("testModel.jl")
-#include("testModelSettings.jl")
-#include("testMeasurementModel.jl")
-#simnamePrefix = "test" 
+# # Test model:
+# include("testModel.jl")
+# include("testModelSettings.jl")
+# include("testMeasurementModel.jl")
 
 
 include("settings.jl")
@@ -66,20 +64,20 @@ totalTimeUsed = 0
 
 function main(setDryrun, setResample, recordingTwin)
 
+    simnamePrefix = "salm4" 
+    #simnamePrefix = "test" 
+
     useRecordedTwin = false
-    recordedTwinPrefix = storageDir*"d_twin123_resample_"
-    if recordingTwin
-        useRecordedTwin = false
-    end
+    recordedTwinPrefix = storageDir*"d_salmtwin_"
 
     # Basic settings:
     dt = 0.2 # Time step
-    t_end = 70.2#99.8#119.8 # Simulation end time
+    t_end = 50.2#99.8#119.8 # Simulation end time
     storageInterval = 1
 
     plotTimeStep = 20
 
-
+    
     # Simulation parameters:
     println(getModelName())
     ms = ModelSettings()
@@ -92,10 +90,32 @@ function main(setDryrun, setResample, recordingTwin)
     as.dryRun = setDryrun
     as.foodInStateVec = true
 
+    # Modify sim name according to run mode:
+    simname = simnamePrefix*"_"
+    if as.dryRun
+        simname = "d_"*simname
+    end
+    if as.resampleAll && !as.dryRun
+        simname = simname*"resample_"
+    end
+
+    prefix = storageDir*simname
+
+    if recordingTwin
+        useRecordedTwin = false
+        as.N = 2
+        storageInterval = 1
+    end
+
+
     # Define domain area:
     xlim = [0, ms.xMax]
     ylim = [0, ms.yMax]
     dxy = ms.dxy # Grid resolution
+    xrng = range(start=xlim[1], stop=xlim[2], step=dxy)
+    yrng = range(start=ylim[1], stop=ylim[2], step=dxy)
+    initializeSettings(ms, (length(xrng), length(yrng)))
+
 
     # Number of time steps:
     ntimes = round(Int, t_end/dt)
@@ -105,25 +125,20 @@ function main(setDryrun, setResample, recordingTwin)
     println("dt=", dt, ", t_end=",t_end,", steps=",ntimes)
     println("xmax=", ms.xMax, ", ymax=", ms.yMax,", dxy=",dxy)
     # If we are to use a recorded twin, load it now:
-    rTwinX = []
-    rTwinY = []
-    rTwinU = []
-    rTwinV = []
-    rTwinE = []
-    rTwinN = []
-
+    rTwinStates = []
+    rTwinXfld = []
+    
     if useRecordedTwin
-        rTwinX = readdlm(recordedTwinPrefix*"twinX.csv", ',')
-        rTwinY = readdlm(recordedTwinPrefix*"twinY.csv", ',')
-        rTwinVX = readdlm(recordedTwinPrefix*"twinVX.csv", ',')
-        rTwinVY = readdlm(recordedTwinPrefix*"twinVY.csv", ',')
-        rTwinE = readdlm(recordedTwinPrefix*"twinE.csv", ',')
-        rTwinN = readdlm(recordedTwinPrefix*"twinN.csv", ',')
+        rTwinStates = readdlm(recordedTwinPrefix*"twin_states.csv", ',')
         rTwinXfld = readdlm(recordedTwinPrefix*"twinXfld.csv", ',')
     end
 
     # Initialize ensemble:
     Ndim = as.N + 1
+
+    testInd = createIndividual(1.0,1.0,1,ms)
+    stateExample = getIndStateVec(testInd)
+    nStatesPerInd = length(stateExample)
 
     ensemble = Array{Array{Individual,1},1}(undef, Ndim)
     for ensI = 1:Ndim
@@ -138,8 +153,8 @@ function main(setDryrun, setResample, recordingTwin)
         else
             # This is the twin and we should initialize from pre-recorded data:
             for i = 1:ms.nInd
-                ensemble[ensI][i] = createIndividual([rTwinX[i,1], rTwinY[i,1], rTwinVX[i,1], rTwinVY[i,1], 
-                    0.0, rTwinN[i,1], rTwinE[i,1]])
+                stateVec = rTwinStates[(1+(i-1)*nStatesPerInd):i*nStatesPerInd,1]
+                ensemble[ensI][i] = createIndividual(stateVec)
             end
         end
     end
@@ -151,16 +166,16 @@ function main(setDryrun, setResample, recordingTwin)
     X_fld = fill(getInitialFieldLevel(), size(densityField,1), size(densityField,2),Ndim)
     
     # Initialize fields for storage:
+    storeStates_twin = fill(0.0, ms.nInd*nStatesPerInd, nstoretimes)
     storeDens_twin = fill(0.0, length(densityField), nstoretimes)
     storeU_twin = fill(0.0, length(densityField), nstoretimes)
     storeV_twin = fill(0.0, length(densityField), nstoretimes)
     storeEnergy_twin = fill(0.0, length(densityField), nstoretimes)
     storeX_twin = fill(0.0, length(densityField), nstoretimes)
+    storeStates_e = fill(0.0, ms.nInd*nStatesPerInd, nstoretimes)
     storeDens_e = fill(0.0, length(densityField), nstoretimes)
     storeStd_field = fill(0.0, length(densityField), nstoretimes)
     storeX_e = fill(0.0, length(densityField), nstoretimes)
-    storeXYE_twin = fill(0.0, 7, ms.nInd, nstoretimes)
-    storeXYE_e1 = fill(0.0, 7, ms.nInd, nstoretimes)
     storeEnergy_e = fill(0.0, length(densityField), nstoretimes)
     storeEnKF_field = fill(0.0, length(densityField), nstoretimes)
     eFillval = 0.0
@@ -189,13 +204,11 @@ function main(setDryrun, setResample, recordingTwin)
                 # This is the twin and we are using pre-recorded data:
                 indsArray = ensemble[ensI] 
                 for i = 1:length(indsArray)
+                    # Pre-recorded state vector for this ind:
+                    stateVec = rTwinStates[(1+(i-1)*nStatesPerInd):i*nStatesPerInd,tstep]
                     ind = indsArray[i]
-                    ind.x = rTwinX[i,tstep]
-                    ind.y = rTwinY[i,tstep]
-                    ind.v_x = rTwinVX[i,tstep]
-                    ind.v_y = rTwinVY[i,tstep]
-                    ind.n = rTwinN[i,tstep]
-                    ind.E = rTwinE[i,tstep]
+                    setStateVector(ind, stateVec)
+                    
                 end
                 X_fld[:,:,ensI] = reshape(rTwinXfld[:,tstep], size(X_fld,1), size(X_fld,2))
             end
@@ -222,38 +235,15 @@ function main(setDryrun, setResample, recordingTwin)
             indsArray = ensemble[Ndim]
             for indI = 1:ms.nInd
                 ind = indsArray[indI]
-                storeXYE_twin[1,indI,storeCount] = ind.x
-                storeXYE_twin[2,indI,storeCount] = ind.y
-                storeXYE_twin[3,indI,storeCount] = ind.E
-                storeXYE_twin[4,indI,storeCount] = ind.n
-                # Find grid cell to store local food concentration:
-                ix, iy = getGridCell(ind, xlim, ylim, dxy)
-                if ix>=1 && iy>=1 && ix<=size(X_fld,1) && iy<=size(X_fld,2)
-                    storeXYE_twin[5,indI,storeCount] = X_fld[ix, iy,Ndim]
-                else
-                    storeXYE_twin[5,indI,storeCount] = NaN
-                end
-                storeXYE_twin[6,indI,storeCount] = ind.v_x
-                storeXYE_twin[7,indI,storeCount] = ind.v_y
+                storeStates_twin[(1+(indI-1)*nStatesPerInd):indI*nStatesPerInd,storeCount] = getIndStateVec(ind)
             end
+            
             indsArray = ensemble[1]
             for indI = 1:ms.nInd
                 ind = indsArray[indI]
-                storeXYE_e1[1,indI,storeCount] = ind.x
-                storeXYE_e1[2,indI,storeCount] = ind.y
-                storeXYE_e1[3,indI,storeCount] = ind.E
-                storeXYE_e1[4,indI,storeCount] = ind.n
-                # Find grid cell to store local food concentration:
-                ix, iy = getGridCell(ind, xlim, ylim, dxy)
-                if ix>=1 && iy>=1 && ix<=size(X_fld,1) && iy<=size(X_fld,2)
-                    storeXYE_e1[5,indI,storeCount] = X_fld[ix, iy,1]
-                else
-                    storeXYE_e1[5,indI,storeCount] = NaN
-                end
-                storeXYE_e1[6,indI,storeCount] = ind.v_x
-                storeXYE_e1[7,indI,storeCount] = ind.v_y
+                storeStates_e[(1+(indI-1)*nStatesPerInd):indI*nStatesPerInd,storeCount] = getIndStateVec(ind)                
             end
-
+            
             # Store density field for twin:
             densityField, xrng, yrng = computeDensityField(ensemble[Ndim], xlim, ylim, dxy)
             storeDens_twin[:,storeCount] = reshape(densityField, length(densityField), 1)
@@ -295,52 +285,30 @@ function main(setDryrun, setResample, recordingTwin)
         flush(stdout)
     end
 
-    # Modify sim name according to run mode:
-    simname = simnamePrefix*"_"
-    if as.dryRun
-        simname = "d_"*simname
-    end
-    if as.resampleAll && !as.dryRun
-        simname = simname*"resample_"
-    end
-
-    prefix = storageDir*simname
-    
-    print(xlim)
-    print(ylim)
-    print(dxy)
 
     # Store a single file giving the field dimensions and the assimilation interval divided by storage interval:
-    writedlm(prefix*"fieldDims.csv", [size(densityField,1) size(densityField,2) as.assimInterval/storageInterval dt*storageInterval], ',')
+    writedlm(prefix*"fieldDims.csv", [size(densityField,1) size(densityField,2) as.assimInterval/storageInterval dt*storageInterval nStatesPerInd], ',')
 
-    # Store twin states to files:
-    writedlm(prefix*"twinX.csv", storeXYE_twin[1,:,:], ',')
-    writedlm(prefix*"twinY.csv", storeXYE_twin[2,:,:], ',')
-    writedlm(prefix*"twinVX.csv", storeXYE_twin[6,:,:], ',')
-    writedlm(prefix*"twinVY.csv", storeXYE_twin[7,:,:], ',')
-    writedlm(prefix*"twinE.csv", storeXYE_twin[3,:,:], ',')
-    writedlm(prefix*"twinN.csv", storeXYE_twin[4,:,:], ',')
-    writedlm(prefix*"twinFood.csv", storeXYE_twin[5,:,:], ',')
+    # Store twin states to file:
+    writedlm(prefix*"twin_states.csv", storeStates_twin, ',')
+
     writedlm(prefix*"twinDens.csv", storeDens_twin, ',')
     writedlm(prefix*"twinEnergy.csv", storeEnergy_twin, ',')
     writedlm(prefix*"twinU.csv", storeU_twin, ',')
     writedlm(prefix*"twinV.csv", storeV_twin, ',')
     writedlm(prefix*"twinXfld.csv", storeX_twin, ',')
 
-    writedlm(prefix*"enkfField.csv", storeEnKF_field, ',')
-
-    writedlm(prefix*"e1X.csv", storeXYE_e1[1,:,:], ',')
-    writedlm(prefix*"e1Y.csv", storeXYE_e1[2,:,:], ',')
-    writedlm(prefix*"e1E.csv", storeXYE_e1[3,:,:], ',')
-    writedlm(prefix*"e1N.csv", storeXYE_e1[4,:,:], ',')
-    writedlm(prefix*"e1Food.csv", storeXYE_e1[5,:,:], ',')
-    writedlm(prefix*"e1VX.csv", storeXYE_e1[6,:,:], ',')
-    writedlm(prefix*"e1VY.csv", storeXYE_e1[7,:,:], ',')
-
+    # Store e1 states to file:
+    writedlm(prefix*"e1_states.csv", storeStates_e, ',')
+    
     writedlm(prefix*"eDens.csv", storeDens_e, ',')
     writedlm(prefix*"eDensStd.csv", storeStd_field, ',')
     writedlm(prefix*"eEnergy.csv", storeEnergy_e, ',')
     writedlm(prefix*"eXfld.csv", storeX_e, ',')
+
+    # Store enKF fields:
+    writedlm(prefix*"enkfField.csv", storeEnKF_field, ',')
+
 end
 
 

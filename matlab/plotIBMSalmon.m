@@ -1,16 +1,6 @@
 
-%prefix = 'D:/work/ibm-enkf/test1/perturb_5_';
-%prefix = 'D:/work/ibm-enkf/test1/run_2026_3_resample_';
-%prefix = 'D:/work/ibm-enkf/test2/loc6.5_uv_upd__';
-%prefix = 'D:/work/ibm-enkf/r1run/twintest__resample_';
-%prefix = 'C:/temp/twintest2__resample_';
-%prefix = 'C:/temp/d_twin123_resample_';
-%prefix = 'C:/temp/d_gtwin_perturb_1_resample_';
-%prefix = 'C:/temp/d_gtwin_indi2500_13_resample_';
-%prefix = 'C:/temp/indi2500_10_resample_';
-%prefix = 'C:/temp/nomigr11_resample_';
-%prefix = 'C:/temp/d_nomigr_long1_resample_';
-prefix = 'C:/temp/d_salm_';
+%prefix = 'C:/temp/d_salm2_';
+prefix = 'C:/temp/d_test_';
 
 animate = 1;
 plotInd = 25;
@@ -19,37 +9,33 @@ dims = dlmread([prefix 'fieldDims.csv']);
 
 % Read twin values:
 
-dt = 1*0.2;
-if length(dims) > 3
-    dt = dims(4);
-end
-speedup = 1;
+dt = dims(4);
+nStatesPerInd = dims(5);
 
-x_twin = dlmread([prefix 'twinX.csv']);
-y_twin = dlmread([prefix 'twinY.csv']);
-E_twin = dlmread([prefix 'twinE.csv']);
-N_twin = dlmread([prefix 'twinN.csv']);
+
+speedup = 2;
+
+% Read twin values:
+twinStates = dlmread([prefix 'twin_states.csv']);
+nInd = size(twinStates,1)/nStatesPerInd;
+
 U_twin = dlmread([prefix 'twinU.csv']);
 V_twin = dlmread([prefix 'twinV.csv']);
-food_twin = dlmread([prefix 'twinFood.csv']);
 dens_twin = dlmread([prefix 'twinDens.csv']);
 energy_twin = dlmread([prefix 'twinEnergy.csv']);
 Xfld_twin = dlmread([prefix 'twinXfld.csv']);
 
-enkfField = dlmread([prefix 'enkfField.csv']);
 % Read ensemble values:
-x_1 = dlmread([prefix 'e1X.csv']);
-y_1 = dlmread([prefix 'e1Y.csv']);
-E_1 = dlmread([prefix 'e1E.csv']);
-N_1 = dlmread([prefix 'e1N.csv']);
-food_1 = dlmread([prefix 'e1Food.csv']);
+e1States = dlmread([prefix 'e1_states.csv']);
 dens_e = dlmread([prefix 'eDens.csv']);
 densStd_e = dlmread([prefix 'eDensStd.csv']);
 energy_e = dlmread([prefix 'eEnergy.csv']);
 Xfld_e = dlmread([prefix 'eXfld.csv']);
 
-xMax = ceil(max(x_1(:)));
-yMax = ceil(max(y_1(:)));
+enkfField = dlmread([prefix 'enkfField.csv']);
+
+xMax = 8;
+yMax = 8;
 
 %%
 
@@ -59,11 +45,11 @@ v.FrameRate = 4; % Default 30
 open(v);
 
 figure('Renderer', 'painters', 'Position', [10 50 1100 800])
-ncol = 3;%4;%3;
+ncol = 4;%3;
 tiledlayout(2,ncol)
 
 if animate > 0
-    range = 1:speedup:size(x_twin,2)
+    range = 1:speedup:size(twinStates,2)
 else
     range = plotInd;
 end
@@ -75,35 +61,52 @@ for i=range
     time = dt*i;
     piv = piv+1;
 
+    twinSt = reshape(twinStates(:,i),[nStatesPerInd nInd]);
+    x_twin = twinSt(1,:);
+    y_twin = twinSt(2,:);
+    vx_twin = twinSt(3,:);
+    vy_twin = twinSt(4,:);
+    E_twin = twinSt(6,:);
+
+    e1St = reshape(e1States(:,i),[nStatesPerInd nInd]);
+    x_1 = e1St(1,:);
+    y_1 = e1St(2,:);
+    vx_1 = e1St(3,:);
+    vy_1 = e1St(4,:);
+    E_1 = e1St(6,:);
+
     nexttile(1)
-    %scatter(x_twin(:,i), y_twin(:,i), [], N_twin(:,i), 'filled');
-    h = scatter(x_twin(:,i), y_twin(:,i), 3, E_twin(:,i), 'filled');
+    hold off
+    
+    %scatter(x_twin, y_twin, [], N_twin(:,i), 'filled');
+    h = scatter(x_twin, y_twin, 3, E_twin, 'filled');
     xlim([0 xMax]), ylim([0 yMax]), , axis image
-    colorbar%, clim([0 3])
-    clim([0 3])
+    %colorbar%, clim([0 3])
+    clim([0 0.1])
     rectangle('Position',[0 0 8 8],'Curvature',[1 1])
     title("Individuals (twin) t="+string(time))
-
-    nexttile(ncol+1)
-    %scatter(x_1(:,i), y_1(:,i), [], N_1(:,i), 'filled');
-    scatter(x_1(:,i), y_1(:,i), 3, E_1(:,i), 'filled');
-    xlim([0 xMax]), ylim([0 yMax]), axis image
-    colorbar%, clim([0 3])
-    rectangle('Position',[0 0 8 8],'Curvature',[1 1])
-    clim([0 3])
-    title('Individuals (ensemble member 1)')
+    axis image, xlim([0 8]), ylim([0 8]);
     
-    % nexttile(4)
-    % dFieldT = reshape(Xfld_e(:,i), dims(1), dims(2));
-    % pcolor(dFieldT'), shading flat, colorbar
-    % clim([0 2])
-    % title('Food field (ensemble)')
-    % 
-    % nexttile(ncol+4)
-    % dFieldT = reshape(Xfld_twin(:,i), dims(1), dims(2));
-    % pcolor(dFieldT'), shading flat, colorbar
-    % clim([0 2])
-    % title('Food field (twin)')
+    nexttile(ncol+1)
+    hold off
+    scatter(x_1, y_1, 3, E_1, 'filled');
+    clim([0 0.1])
+    %colorbar, clim([0 3])
+    rectangle('Position',[0 0 8 8],'Curvature',[1 1])
+    title('Individuals (ensemble member 1)')
+    axis image, xlim([0 8]), ylim([0 8]);
+
+    nexttile(4)
+    dFieldT = reshape(Xfld_e(:,i), dims(1), dims(2));
+    pcolor(dFieldT'), shading flat, colorbar
+    clim([0 1])
+    title('Food field (ensemble)')
+
+    nexttile(ncol+4)
+    dFieldT = reshape(Xfld_twin(:,i), dims(1), dims(2));
+    pcolor(dFieldT'), shading flat, colorbar
+    clim([0 1])
+    title('Food field (twin)')
 
     % nexttile(ncol+4)
     % dFieldT = reshape(densStd_e(:,i), dims(1), dims(2));
